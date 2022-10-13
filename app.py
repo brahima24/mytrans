@@ -2,7 +2,7 @@ from flask import Flask, render_template, request,redirect,session
 from flask_session import Session
 import values as V
 import functions as F
-from waitress import serve
+# from waitress import serve
 import api as A
 
 
@@ -535,8 +535,9 @@ def tt():
 # git push -u origin master
 
 ## Pushh
-# git remote add origin git@github.com:alexpchin/<reponame>.git
-# git push -u origin master
+# git remote add origin https://github.com/brahima24/wariex.git
+# git branch -M main
+# git push -u origin main
 if __name__=='__main__':
 
     app.debug = False
