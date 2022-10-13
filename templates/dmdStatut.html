@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% set titre = titre %}
+{% set V = V %}
+{% set F = F %}
+{% block content %}
+
+
+<div class="flex px-1 xl:w-1/2 md:px-3 flex-col items-center bg-{{V.sttCls[dmd[V.statut]] if dmd[V.statut] in V.sttCls.keys() else 'red-300'}} rounded-lg border shadow-md md:flex-row hover:bg-opacity-75">
+    <img class="object-cover w-full h-96 rounded-t-lg md:h-auto md:w-48 md:rounded-none md:rounded-l-lg" src="{{url_for('static',filename=V.imgs(dmd[V.moyen]))}}" alt="">
+    <div class="flex flex-col justify-between p-4 leading-normal">
+        {% if dmd %}
+        <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 font-bold dark:text-white">Identifiant: {{dmd['id']}}</h5>
+        <p class="mb-3 font-normal text-gray-700 dark:text-gray-400"> <span class="text-black text-lg font-bold">
+            Statut: </span> <span class="text-md">{{dmd[V.statut]}}</span>
+        </p>
+        <p class="text-red px-2">
+            {{ V.dmdMsg(dmd[V.statut]) | safe }}
+        </p>
+        {% else %}
+        <p>
+            Cette demande n'existe pas!
+        </p>
+        {% endif %}
+
+    </div>
+</div>
+
+
+{% endblock %}

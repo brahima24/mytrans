@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% set titre = titre %}
+{% set V = V %}
+{% set F = F %}
+{% block content %}
+
+
+<span class="text-3xl text-center px-3 font-bold">Demandes en attente de confirmation </span> <br>
+<span class="text-2xl text-center px-3 font-bold">Departement: {{F.sDept()}}</span>
+
+{{ tb | safe }}
+
+{% endblock content %}

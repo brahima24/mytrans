@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% set titre = titre %}
+{% set V = V %}
+{% set F = F %}
+{% block content %}
+
+{{ (F.banner(msg) if msg!='' else '') | safe}}
+
+<div class="container py-5 rounded w-full p-5 md:w-2/3 xl:w-2/5 mx-auto flex flex-wrap flex-col md:flex-row bg-gray-100 bg-opacity-25 justify-center items-center">
+    <form action="{{V.links[V.lkDmd]}}"
+    method="post" enctype="multipart/form-data" class="flex w-full flex-col md:w-4/5 justify-center items-start md:text-left items-center">
+        <div class="text-center font-semibold text-black pb-12">
+            Demande de transport / Travel request
+        </div>
+
+        {{(F.chTxt(V.nomC)+F.chNbr(V.numero)) |safe}}
+
+        {{F.chSel(V.ste,md='ste') | safe}}
+        <div x-show="trainee!=='Oui' && sc===''" class="w-full">
+            {{F.chTxt(V.badge,md='badge') | safe}}
+        </div>
+        <div class="w-full" x-show="trainee!=='Oui' && badge==='' ">
+            {{ F.chTxt(V.sc, md='sc') |safe}}
+        </div>
+        <div x-show=" sc===''  && badge==='' " class="w-full">
+            {{ F.chSel(V.trainee,md='trainee') | safe}}
+        </div>
+
+        <!-- <div x-show="!badge" class="w-full"> -->
+
+            {{ F.chSel(V.dept) | safe}}
+
+        {{F.chAg()|safe}}
+        {{F.chSel(V.moyen, md='moyen') | safe }}
+
+        {{F.chSel(V.lieu,md='lieu') | safe}}
+        {{F.chDate() | safe}}
+        {{F.chTxt(V.raison) | safe}}
+        {{F.chTxt(V.heberger) | safe}}
+
+
+        <button class="h-10 px-5 w-1/3 text-indigo-700 transition-colors duration-150 border border-indigo-500 rounded-lg focus:shadow-outline hover:bg-indigo-500 hover:text-indigo-100">
+            Envoyer
+        </button>
+
+    </form>
+</div>
+
+
+{% endblock %}
