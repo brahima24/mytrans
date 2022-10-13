@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel = "icon" href="{{url_for('static',filename='img/logo.PNG')}}" type = "image/x-icon">
+    <title>{{titre}}</title>
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta name="author" content="" />
+
+    <link rel="stylesheet" href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css"/>
+    <link
+      href="https://unpkg.com/@tailwindcss/custom-forms/dist/custom-forms.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.js" defer></script>
+    <style>
+      @import url("https://rsms.me/inter/inter.css");
+      html {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+          "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+          "Noto Color Emoji";
+      }
+      
+      .col{
+        background-color: #5d53dd;
+      }
+
+      .gradient {
+        background-image: linear-gradient(-225deg, #08185f 0%, #08185f 100%);
+      }
+
+      
+      .gradient2 {
+        background-color: #5d53dd;
+        background-image: linear-gradient(315deg, #9da1cf 0%, #0a96e7 74%);
+      }
+
+      .browser-mockup {
+        border-top: 2em solid rgba(230, 230, 230, 0.7);
+        position: relative;
+        height: 60vh;
+      }
+
+      .browser-mockup:before {
+        display: block;
+        position: absolute;
+        content: "";
+        top: -1.25em;
+        left: 1em;
+        width: 0.5em;
+        height: 0.5em;
+        border-radius: 50%;
+        background-color: #f44;
+        box-shadow: 0 0 0 2px #f44, 1.5em 0 0 2px #9b3, 3em 0 0 2px #fb5;
+      }
+
+      .browser-mockup > * {
+        display: block;
+      }
+
+      input::-webkit-outer-spin-button,
+      input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      /* Firefox */
+      input[type=number] {
+        -moz-appearance: textfield;
+      }
+
+      /* Custom code for the demo */
+    </style>
+  </head>
+
+  <body class="leading-relaxed w-full tracking-wide flex flex-col">
+
+    <div class="sticky w-full z-30 top-0">
+      <nav id="header" class=" gradient text-white py-3">
+        <div
+          class="w-full container mx-auto flex flex-wrap items-center justify-between mt-0 px-2"
+        >
+          <div class="pl-4 flex items-center">
+            <a
+              class="text-yellow-500 no-underline hover:no-underline font-bold text-2xl lg:text-4xl"
+              href="/"
+            >
+            {{V.mytrans}}
+            </a>
+          </div>
+
+          <div class="block lg:hidden pr-4">
+            <button
+              id="nav-toggle"
+              class="flex items-center px-3 py-2 border rounded text-gray-500 border-gray-600 hover:text-gray-800 hover:border-green-500 appearance-none focus:outline-none"
+            >
+              <svg
+                class="fill-current h-3 w-3"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <title>Menu</title>
+                <path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z" />
+              </svg>
+            </button>
+          </div>
+
+          <div
+            class="w-full flex-grow lg:flex lg:items-center lg:w-auto hidden lg:block mt-2 lg:mt-0 text-black p-4 lg:p-0 z-20"
+            id="nav-content"
+          >
+          <ul class="list-reset lg:flex justify-end flex-1 items-center">
+          {% for k in V.siteMenu.keys() %}
+          <li>
+            <a
+            class="inline-block text-white font-black no-underline hover:text-gray-300 hover:text-underline px-2"
+            href="{{V.siteMenu[k]}}"
+            > {{k}} </a>
+        </li>
+
+
+          {% endfor %}
+          {% if F.isAdm() %}<li class="mr-2">
+            <li class="m-2">
+            
+            <a href="{{V.links[V.lkUrg]}}"
+            class="inline-block uppercase rounded-lg hover:bg-red-400 bg-red-600 text-white no-underline hover:text-gray-800 hover:text-underline p-2"
+            >
+                  urgence
+            </a> 
+          </li>
+          {% endif %}
+        </ul>
+          {% if F.sTk() %} 
+            {{F.usrMenu((F.sPrNom()[0]+'. '+F.sNom()).upper(),F.sEml(),F.sPrNom()[0]+F.sNom()[0]) | safe}}
+          
+            {% else %}
+
+          <a href="{{V.links[V.login]}}">
+            <button
+                id="navAction"
+                class="mx-auto bg-yellow-500 lg:mx-0 hover:underline text-gray-800 font-extrabold rounded-lg mt-4 lg:mt-0 py-2 px-8 shadow"
+            >
+                Se Connecter
+            </button>
+          </a> 
+          {% endif %}
+          </div>
+        </div>
+        
+        
+      </nav>
+      {% if F.isAdm() %}
+      <div class="w-full flex flex-wrap bg-gray-300">
+        <div class="md:w-1/3 w-full">
+        </div>
+        <div class="flex flex-col bg-opacity-75 text-white font-bold justify-between md:w-1/3 w-full p-4 mt-4 rounded-lg md:flex-row md:space-x-8 md:mt-0 md:text-sm md:font-medium md:border-0 dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
+          
+          <div>
+            <a href="{{V.links[V.lkListe]}}" class="block py-2 pr-4 pl-3 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 md:dark:hover:text-white dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700">
+            Listes disponibles
+            </a>
+          </div>
+          <div>
+            <!-- <a href="{{V.links[V.lkDep]}}" class="block py-2 pr-4 pl-3 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 md:dark:hover:text-white dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700">
+              Prochain depart
+            </a> -->
+            {{F.btnAdm(V.chemins[V.depart]) | safe}}
+            
+          </div>
+          <div>
+            {{F.btnAdm(V.chemins[V.retour]) | safe}}
+          </div>
+        </div>
+        <div class="md:w-1/3 w-full">
+        </div>
+      </div>
+      {% elif F.isSprUsr() %}
+      
+      <div class="w-full flex flex-wrap bg-gray-300">
+        <div class="md:w-1/3 w-full">
+        </div>
+          {{F.mnu_lk(V.spUsrMnu) | safe}}
+          
+        <div class="md:w-1/3 w-full">
+        </div>
+      </div>
+      {% endif %}
+      {% block sticky %} {% endblock %}
+
+    </div>
+
+
+    <div class="bg-white mt-20 " x-data="{
+      badge:'',trainee: '',ste:'',nbrEnf:0,moyen:'',
+      lieu: '', sc:'', nb:nbr(),ch: ch
+  }">
+    {% block content %} {% endblock %}
+    </div>
+
+    <script>
+  
+      var navMenuDiv = document.getElementById("nav-content");
+      var navMenu = document.getElementById("nav-toggle");
+
+      document.onclick = check;
+      function check(e) {
+        var target = (e && e.target) || (event && event.srcElement);
+
+        if (!checkParent(target, navMenuDiv)) {
+          if (checkParent(target, navMenu)) {
+            if (navMenuDiv.classList.contains("hidden")) {
+              navMenuDiv.classList.remove("hidden");
+            } else {
+              navMenuDiv.classList.add("hidden");
+            }
+          } else {
+            navMenuDiv.classList.add("hidden");
+          }
+        }
+      }
+      function checkParent(t, elm) {
+        while (t.parentNode) {
+          if (t == elm) {
+            return true;
+          }
+          t = t.parentNode;
+        }
+        return false;
+      }
+    </script>
+    <script>
+      const nbr = ()=>{
+          return (document.querySelectorAll('input[type="checkbox"]:checked')).length
+      }
+      function ch(){
+        this.nb = nbr()
+      }
+      const count = ()=> {
+          
+          return {
+              nb: nbr(),
+              ch(){
+                this.nb = nbr()
+              },
+          }
+      }
+      </script>
+  
+    <!-- <footer class="bg-white ">
+        <div class="container mx-auto mt-8 px-8">
+          <div class="w-full flex flex-col md:flex-row py-6">
+            <div class="flex-1 mb-6">
+              <a
+                class="text-orange-600 no-underline hover:no-underline font-bold text-2xl lg:text-4xl"
+                href="#"
+              >
+                <svg
+                  class="h-6 w-6 inline-block"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M13 8V0L8.11 5.87 3 12h4v8L17 8h-4z" />
+                </svg>
+                Bolt App
+              </a>
+            </div>
+  
+            <div class="flex-1">
+              <p class="uppercase font-extrabold text-gray-500 md:mb-6">Links</p>
+              <ul class="list-reset mb-6">
+                <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                  <a
+                    href="#"
+                    class="font-light no-underline hover:underline text-gray-800 hover:text-orange-500"
+                    >FAQ</a
+                  >
+                </li>
+                <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                  <a
+                    href="#"
+                    class="font-light no-underline hover:underline text-gray-800 hover:text-orange-500"
+                    >Help</a
+                  >
+                </li>
+                <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                  <a
+                    href="#"
+                    class="font-light no-underline hover:underline text-gray-800 hover:text-orange-500"
+                    >Support</a
+                  >
+                </li>
+              </ul>
+            </div>
+            <div class="flex-1">
+              <p class="uppercase font-extrabold text-gray-500 md:mb-6">Legal</p>
+              <ul class="list-reset mb-6">
+                <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                  <a
+                    href="#"
+                    class="font-light no-underline hover:underline text-gray-800 hover:text-orange-500"
+                    >Terms</a
+                  >
+                </li>
+                <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                  <a
+                    href="#"
+                    class="font-light no-underline hover:underline text-gray-800 hover:text-orange-500"
+                    >Privacy</a
+                  >
+                </li>
+              </ul>
+            </div>
+            <div class="flex-1">
+              <p class="uppercase font-extrabold text-gray-500 md:mb-6">Social</p>
+              <ul class="list-reset mb-6">
+                <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                  <a
+                    href="#"
+                    class="font-light no-underline hover:underline text-gray-800 hover:text-orange-500"
+                    >Facebook</a
+                  >
+                </li>
+                <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                  <a
+                    href="#"
+                    class="font-light no-underline hover:underline text-gray-800 hover:text-orange-500"
+                    >Linkedin</a
+                  >
+                </li>
+                <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                  <a
+                    href="#"
+                    class="font-light no-underline hover:underline text-gray-800 hover:text-orange-500"
+                    >Twitter</a
+                  >
+                </li>
+              </ul>
+            </div>
+            <div class="flex-1">
+              <p class="uppercase font-extrabold text-gray-500 md:mb-6">
+                Company
+              </p>
+              <ul class="list-reset mb-6">
+                <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                  <a
+                    href="#"
+                    class="font-light no-underline hover:underline text-gray-800 hover:text-orange-500"
+                    >Official Blog</a
+                  >
+                </li>
+                <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                  <a
+                    href="#"
+                    class="font-light no-underline hover:underline text-gray-800 hover:text-orange-500"
+                    >About Us</a
+                  >
+                </li>
+                <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                  <a
+                    href="#"
+                    class="font-light no-underline hover:underline text-gray-800 hover:text-orange-500"
+                    >Contact</a
+                  >
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </footer> -->
+  </body>
+  </html>

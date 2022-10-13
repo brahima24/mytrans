@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% set titre = titre %}
+{% set V = V %}
+{% set F = F %}
+
+{% block sticky %}
+
+
+<div class="w-full bg-white pt-2">
+    {{titre}} {{dt if dt else ''}}
+    <form action="{{lk}}" class="p-1 w-72 flex flex-wrap" method="post" enctype="multipart/form-data">
+        <div class="p-1 w-5/6">
+            <input type="date" value="{{dt}}" name="{{V.date}}" required class="{{F.getCls(F.fCls)}}">
+        </div>
+        <button class=" w-1/6 bg-gray-200" type="submit">
+            Send
+        </button>
+    </form>
+    <span x-text='"Nombres selectionnés: "+nb'></span>
+</div>
+
+{% endblock %}
+{% block content %}
+
+
+{{ (tb if nb !=0 else '') | safe}}
+
+{% endblock %}

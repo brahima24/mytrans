@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% set titre = titre %}
+{% set V = V %}
+{% set F = F %}
+{% block content %}
+
+
+<div class="flex flex-col items-center bg-gray-400 rounded-lg border shadow-md md:flex-row md:max-w-xl hover:bg-opacity-75">
+    
+    <h1 class="text-2xl font-bold">
+        {{'Compte'+('' if rs else ' non')+' cree!!!'}}
+    </h1>
+    <p>
+        {{'Un email vous a ete envoyer, veuillez verifer votre mail afin de choisir un mot de passe!!' if rs else 'Veuillez ressayer'}}
+    </p>
+</div>
+
+
+{% endblock %}

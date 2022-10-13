@@ -1,0 +1,10 @@
+flask
+functools
+pyrebase4
+flask-session
+firebase-admin
+os
+numpy
+pandas
+time
+random
