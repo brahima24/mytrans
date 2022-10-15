@@ -1,3 +1,4 @@
+from os import link
 from flask import Flask, render_template, request,redirect,session
 from flask_session import Session
 import values as V
@@ -13,17 +14,53 @@ Session(app)
 
 @app.route('/')
 @A.allArgs
-@A.deAuth
+# @A.deAuth
 def home():
+    if F.isSprUsr():
+        return redirect(V.links[V.lkSpUsr]())
+    elif F.sTk():
+        return redirect(V.links[V.lkConn])
     # print(F.lkV('bus'))
     # tb = F.table(V.vDt,'','')
+    # return 'ppppp'
     return render_template('home.html', F=F,V=V,titre='Accueil', tb = '' )
 
-@app.route('/superuser')
+@app.route(V.links[V.lkRstPwd], methods=['GET','POST'])
+
+@A.rstArgs
+def rstPwd():
+    oob = dict(request.args)[V.oobCode]
+    rst = lambda msg='': A.form('Reinitialisation / Resetting',V.rstPwd,msg,oob=oob)
+    if A.isGet():
+        return rst()
+
+    form = request.form
+    if len(form.keys())!=2:
+        return redirect('/')
+    try:
+        pwd = form[V.password]
+        if pwd!=form[V.pwdConf]:
+            return rst('Les deux mots de passes ne sont pas pareil!!')
+        rs = A.resetPwd(pwd,oob)
+        if rs: 
+            return redirect(V.links[V.login])
+        else: rst('Ressayer plus tard!!!')
+    except Exception as e:
+        return rst('Ressayer plus tard!!!')
+
+@app.route(V.links[V.lkSpUsr]())
 @A.allArgs
 @A.chkTk
 def spAdm():
-    return render_template('home.html',V=V,F=F,titre='SP-USR')
+    return render_template('sprusr.html',V=V,F=F,titre='SP-USR')
+
+@app.route(V.links[V.lkSpUsr]('addDept'),methods=['POST'])
+@A.allArgs
+@A.chkTk
+def addDept():
+    
+    return render_template('sprusr.html',V=V,F=F,titre='SP-USR')
+
 
 @app.route(V.links[V.lkCrtUsr], methods=['GET','POST'])
 @A.allArgs
@@ -31,20 +68,20 @@ def spAdm():
 @A.chkSprUsr
 def crt_user():
     
-    if request.method == 'GET':
+    if A.isGet():
         return A.form('Creer utilisateur',V.crtUser)
-    
+    idd,dt = F.crtIdDt()
     form = dict(request.form)
 
     for k in form.keys():
         form[k] = F.rmSpc(form[k])
-    
+    form[V.date] = dt
     form[V.role]= int(form[V.role])
     form[V.niveau] = V.superUsr if form[V.role]==V.superUsr else int(form[V.niveau])
     rs = A.create_user(form)
+    # A.saveInColl(V.collLog,hist)
         # return render_template('aff.html',F=F,V=V,titre='Success')
     return redirect('/crt/'+('succes' if rs else 'echec'))
-
 
 @app.route(V.links[V.lkConn], defaults={'tp':''}, methods=['GET','POST'])
 # @app.route(V.links[V.lkConn]+'/<tp>', methods=['GET','POST'])
@@ -56,7 +93,7 @@ def conn(tp):
     cTmp = lambda dmds, lk,val=False,msg='': render_template('conn.html', F=F,V=V,titre='Connecté',tb=F.table(dmds,lk,val),msg=msg)
 
     lk = V.links[V.lkConn]+f'/{tp}' if tp!='' else V.links[V.lkConn]
-    if request.method == 'GET':
+    if A.isGet():
         # val = True if tp!='' else False
         # :
             # ctrt = A.Ctrt(V.statut,'==',V.statuts[V.valider] if F.isAdm() else V.statuts[V.confirmer])
@@ -73,8 +110,13 @@ def conn(tp):
     form = request.form
     id,dt = F.crtIdDt()
     for i in form.keys():
-        A.updt(V.collDmd,i,V.statut,V.statuts[V.valider] if F.isAdm() else V.statuts[V.confirmer])
-        A.updt(V.collDmd,i,V.dateConf,dt)
+        up = {
+            V.statut: V.statuts[V.confirmer],
+            V.confPar: F.sEml(),
+            V.dateConf:dt,
+        }
+        A.updt(V.collDmd,i,dct=up)
+
     return redirect(lk)
 
 @app.route(V.links[V.login], methods=['GET','POST'])
@@ -82,7 +124,7 @@ def conn(tp):
 @A.deAuth
 def login():
     ttr = 'Form. de conn.'
-    if request.method == 'GET':
+    if A.isGet():
         return A.form(titre=ttr,key=V.login)
     else:
         email = request.form[V.email]
@@ -232,6 +274,7 @@ def voyage(chemin):
             id,dt = F.crtIdDt()
             liste = {
                 'id': id,
+                V.creePar: F.sEml(),
                 V.date: dt,
                 V.jourDeVoyage: dte,
                 V.moyen: moyen,
@@ -245,12 +288,15 @@ def voyage(chemin):
         lId = liste['id'] if lst else ll[0]['id']
         for i in request.form.keys():
             n = j<nb
+            up = {}
             if moyen == V.bus:
-                A.updt(V.collDmd,i,V.statut,V.valider if n else V.busAttente)
+                up = {V.statut:V.valider if n else V.busAttente,V.valPar:F.sEml()}
+                # A.updt(V.collDmd,i,dct=)
             elif n:
-                A.updt(V.collDmd,i,V.statut,V.valider)
+                up = {V.statut:V.valider}
             else: return redirect(V.links[V.lkListe])
-            A.updt(V.collDmd,i,V.collListe, lId)
+            up[V.collListe] = lId
+            A.updt(V.collDmd,i,dct=up)
             j += 1
         return redirect(V.links[V.lkListe])
         # return f'{form,lll}'
@@ -293,7 +339,7 @@ def voyage(chemin):
 
     # ctrt.add(V.lieu,'in',vDep)
     dmds1 = A.getAllData(V.collDmd,ctrt)#,col)
-    print(ctrt.field,ctrt.val,dmds)
+    # print(ctrt.field,ctrt.val,dmds)
     dd = F.getVyDt(dmds1,vDep,True)
     dmds += dd
     dmds = F.sortDf(dmds,V.dateConf)
@@ -321,7 +367,7 @@ def voyage(chemin):
 @A.chkTk
 def urgence():
     cDmd = lambda msg='',rq=None: A.form('Demande',V.urg,msg,rq)
-    if request.method == 'GET':
+    if A.isGet():
         return cDmd()
     else:
         id,dte = F.crtIdDt()
@@ -344,11 +390,9 @@ def urgence():
         dmd[V.dateConf] = dte
         dmd[V.statut] = V.valider
         dmd[V.raison] = V.urg
-
         for i in V.dmdFields:
             if i not in dmd.keys():
                 dmd[i] = '--'
-
         ct = A.Ctrt(V.jourDeVoyage, '==' ,dt)
         ct.add(V.moyen,'==',my)
         ll = A.getAllData(V.collListe,ct)
@@ -363,6 +407,7 @@ def urgence():
             liste = {
                 'id': id,
                 V.date: dte,
+                V.creePar: F.sEml(),
                 V.jourDeVoyage: dt,
                 V.moyen: my,
                 V.publier: V.non,
@@ -373,7 +418,7 @@ def urgence():
             if not res: return cDmd('Probleme, reessayer plus tard!!',form)
             # if not res: return redirect(lk1)
         dmd[V.collListe] = liste['id'] if lst else ll[0]['id']
-        print(dmd)
+        # print(dmd)
         A.saveInColl(V.collDmd,dmd)
 
         chm = V.data[V.chemin]
@@ -387,7 +432,7 @@ def urgence():
 def conn_dmd():
     # key = V.urg if F.isAdm() else V.crtDmd
     cDmd = lambda msg='',rq=None: A.form('Demande',V.crtDmd,msg,rq)
-    if request.method == 'GET':
+    if A.isGet():
         return cDmd()
     id,dte = F.crtIdDt()
     dmd = {
@@ -540,7 +585,7 @@ def tt():
 # git push -u origin main
 if __name__=='__main__':
 
-    app.debug = False
+    app.debug = True
     app.run('0.0.0.0',2022)
     # serve(app,host='0.0.0.0',port=2022, threads=1)
  

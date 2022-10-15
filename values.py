@@ -1,3 +1,4 @@
+from flask import request
 lkCrtUsr = 'lkCrtUsr'
 mytrans = 'myTrans'
 lkDmd = 'demande'
@@ -69,6 +70,10 @@ crtDmd = 'create_demande'
 date = 'date'
 lkDep = 'depart'
 lkRet = 'retour'
+mode = 'mode'
+oobCode = 'oobCode'
+apiKey = 'apiKey'
+lang = 'lang'
 collListe = 'liste'
 age = 'age'
 dateConf = 'date_confirmation'
@@ -94,7 +99,38 @@ elevee = 3
 lkUrg = 'urgence'
 somilo = 'SOMILO'
 gktoSA = 'Gounkoto S.A.'
-
+nb_tent = 'nb_tentative'
+bloque = 'bloque'
+maxTentative = 4
+isBlocked = 1
+notBlocked = 0
+filesDir = 'static/files/'
+fileDepts = 'depts.json'
+lkSpUsr='sprusr'
+collLog = 'log'
+resultat = 'resultat'
+conn = 'connexion'
+abrev = 'abreviation'
+fbaseDsbld = 'TOO_MANY_ATTEMPTS_TRY_LATER'
+pwdIncorr = 'INVALID_PASSWORD'
+emlNotFound = 'EMAIL_NOT_FOUND'
+accBlocked = 'ACCOUNT_BLOQUED'
+limitTent = 'LIMIT_TENTATIVE'
+cntd = 'CONNECTED'
+emlExist = 'EMAIL_EXIST'
+invOob = 'INVALID_OOB_CODE'
+rstRai = 'RESET_PASSWORD'
+failure = 'FAILURE'
+success = 'SUCESS'
+deptNm = 'nom'
+modifDate = 'modif_date'
+lkRstPwd = 'resetPassword'
+rstPwd = 'resetPwd'
+pwdConf = 'pwdConf'
+lkAdd = 'add'
+confPar = 'confirmer_par'
+valPar = 'valider_par'
+creePar = 'creer_par'
 statuts = {
     valider: valider,
     confirmer: confirmer,
@@ -109,12 +145,14 @@ sttCls = {
     # attente: 'blue-200',
 }
 labels = {
+    abrev: 'Abreviation',
     moyen: 'Moyen de transport / Means of transport',
     nbrEnf: 'Nombre d\'enfant / Number of child',
     ste: 'Société / Company',
     email: 'Email',
     numero:'Numero de telephone / Cell Phone',
     password: 'Mot de passe / Password',
+    pwdConf: 'Confirmez le mot de passe / Confirm password',
     prenom: 'Prenom / Fist name',
     nom:'Nom / Last name',
     nomC: 'Noms & Prénoms / Names & Surnames',
@@ -134,6 +172,7 @@ labels = {
 
 }
 links = {
+    lkRstPwd : '/resetPassword',
     lkCrtUsr: '/crtUsr',
     lkConnDmd: '/usrDmd',
     lkDmd: '/demander',
@@ -147,15 +186,25 @@ links = {
     lkDmdSt: '/demande',
     lkVoy:'/voyage',
     lkChm: lambda l: f'/voyage/{l}',
+    lkAdd: '/addDept',
     # lkDep: f'/voyage/{depart}',
     # lkRet: f'/{retour}',
     lkListDisp: '/liste',
-    lkUrg: '/urgence'
+    lkUrg: '/urgence',
+    lkSpUsr: lambda l='':'/superuser/'+l 
 }
+fmtFrm = lambda tt,fld,lb,l :{
+        titre: tt,
+        field: fld,
+        lbl: lb,
+        lk: l
+    }
+rsLk = lambda vl: links[lkRstPwd]+ f'?{oobCode}={vl}' if vl else ''
 formInfos = {
-
+    rstPwd: lambda vl: fmtFrm('Reinitialisation de mote de passe / Resetting password', [password,pwdConf],'Confirmez / Confirm',rsLk(vl)),
+    dept: fmtFrm('Ajout d\'un nouveau departemt / Adding new department',[deptNm],'Ajouter/Add','#'),
     login: {
-        titre: 'Connexion',
+        titre: '',
         field: [email,password],
         lbl: 'Se connecter / Sign in',
         lk: links[login]
@@ -204,7 +253,7 @@ formInfos = {
 }
 spUsrMnu = {
     'Creer un utilisateur': links[lkCrtUsr],
-    'Autre chose': '#'
+    'Ajouter un dwepartement': ''
 }
 siteMenu = {
     'Accueil': '/',
@@ -275,9 +324,10 @@ nbrPer = {
     avion: 1
 }
 
+
 textType = [prenom,badge,nom,id,sc,nomC,raison]
 isMod = [lieu,trainee,badge,nbrEnf,sc]
-pwdType = [password]
+pwdType = [password,pwdConf]
 nbrType = [costCode,numero,nbrEnf]
 slctType = list(data.keys())
 notReq = [sc,trainee,badge,heberger]

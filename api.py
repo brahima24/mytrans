@@ -1,4 +1,8 @@
 from flask import render_template,session,redirect,request
+from matplotlib.style import use
+from numpy import save
+# from requests import HTTPError
+import requests
 import values as V
 import functions as F
 import configs as C
@@ -20,21 +24,26 @@ fbase = pyrebase.initialize_app(C.fbConf)
 db = firestore.client()
 
 coll = lambda nom: db.collection(nom)
-updt = lambda coll,id,field,val: db.collection(coll).document(id).update({field:val})
-form = lambda titre,key,msg="",req={}: render_template('form.html', session=session, titre=titre,V=V, F=F,ctt=F.Form(key,msg,req))
+updt = lambda coll,id,field='',val='',dct={}: db.collection(coll).document(id).update({field:val} if not dct else dct)
+form = lambda titre,key,msg="",req={},oob='': render_template('form.html', session=session, titre=titre,V=V, F=F,ctt=F.Form(key,msg,req,oob))
 home = lambda: render_template('home.html', F=F,V=V,titre='Accueil')
 panel = lambda id,r: redirect(f"{V.links[V.lkPnl]}/{id}/{F.getSt(r)}")
-
+isGet = lambda: request.method == 'GET'
 userColl = coll(V.collUser)
 
 cAuth = fbase.auth()
 
-def getData(clt,id):
-    dt = coll(clt).document(id).get()
+freeUser = lambda email: updt(V.collUser,email,dct={V.bloque:V.notBlocked})
 
-    if dt.exists:
-        return dt.to_dict()
-    return False
+def getData(clt,id):
+    try:    
+        dt = coll(clt).document(id).get()
+
+        if dt.exists:
+            return dt.to_dict()
+        return False
+    except:
+        return False
 
 def allArgs(func):
     @wraps(func)
@@ -63,6 +72,26 @@ def args(func):
         return func(*args, **kwargs)
         # Extend some capabilities of func
     return wrapper
+
+
+def rstArgs(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        """A wrapper function"""
+        desc = dict(request.args)
+        l = len(desc.keys())
+        if l not in [4,1]: return redirect('/')
+        # if 
+        lst = [V.mode,V.oobCode,V.apiKey,V.lang] if l==4 else [V.oobCode]
+        for i in desc.keys():
+            if i not in lst :
+                return redirect('/')
+        # return desc
+        # else: return redirect('/login')
+        return func(*args, **kwargs)
+        # Extend some capabilities of func
+    return wrapper
+
 
 def lArgs(func):
     @wraps(func)
@@ -137,7 +166,7 @@ def deAuth(f):
     @wraps(f)
     def wrap(*args,**kwargs):
         if session.get(V.tk):
-            return redirect(V.links[V.lkConn])
+            return redirect('/')
         return f(*args, **kwargs)
     return wrap
 
@@ -162,7 +191,7 @@ def getAllData(coll,ctrt: Ctrt=None):
             vl = f"""{tp}("{ctrt.val[c]}")""" if tp!='list' else ctrt.val[c]
             qry += f""".where('{ctrt.field[c]}','{ctrt.comp[c]}',{vl})"""
         qry += ".stream()"
-        print(qry)
+        # print(qry)
         data = eval(f"""{qry}""")
     l = []
 
@@ -237,9 +266,15 @@ def getConnData(coll=None):
     return data
 
 def conn(email,pwd):
-    msg = 'Veuillez bien verifer votre email ou mot de passe'
+    # msg = 'Veuillez bien verifer votre email ou mot de passe'
+    msg = 'Cet compte est bloqué, contactez le service informatique!'
+    
+    hist = F.crtHist(email,V.conn)
+    
+    
     try:
-        print(email)
+        
+        # print(email)
         usr = cAuth.sign_in_with_email_and_password(email,pwd)
         # print(usr)
         tk = usr['idToken']
@@ -249,31 +284,112 @@ def conn(email,pwd):
         #     cAuth.send_password_reset_email(email)
         #     return f'Desolé cet email vous devez change votre mot de passe, un email vient de vous etre adreese a l\'email {email} !!'
         user = getData(V.collUser,email)
-        print(user)
+        # print(user)
         if user:
+            if user[V.bloque]==V.isBlocked:
+                hist[V.resultat] = V.accBlocked
+                saveInColl(V.collLog,hist)
+                return msg
             # user = user.to_dict()
             # print(F.sTk())
+            updt(V.collUser,email,V.nb_tent,0)
+            user[V.nb_tent] = 0
+            
             for i in user.keys():
                 session[i] = user[i]
             session[V.tk] = tk
+            hist[V.resultat] = V.cntd
+            
+            saveInColl(V.collLog,hist)
             return True
+        
+        hist[V.resultat] = V.emlNotFound
+        saveInColl(V.collLog,hist)
+        msg = 'Cet utilisateur n\'existe pas'
         session.clear()
         return msg
-    except:
+    except requests.exceptions.HTTPError as e:
+        # print(e)
+        user = getData(V.collUser,email)
+        if user and F.isBlocked(user):
+            hist[V.resultat] = V.accBlocked
+            saveInColl(V.collLog,hist)
+            return msg
+        
+        e = str(e)
+        msg = 'Veuillez bien verifer votre '
+        if V.pwdIncorr in e:
+            nt = user[V.nb_tent]
+            if nt==V.maxTentative:
+                hist[V.resultat] = V.limitTent
+                updt(V.collUser,email,V.bloque,V.isBlocked)
+            else:
+                hist[V.resultat] = V.pwdIncorr
+                updt(V.collUser,email,V.nb_tent,nt+1)
+            msg += 'mot de passe'
+        elif V.emlNotFound in e:
+            hist[V.resultat] = V.emlNotFound
+            msg += 'email'
+        elif V.fbaseDsbld in e:
+            hist[V.resultat] = V.accBlocked
+            # user = getData(V.collUser,email)
+            updt(V.collUser,email,V.bloque,V.isBlocked)
+            msg = 'Cet compte est bloqué, contactez le service informatique!'
+        saveInColl(V.collLog,hist)
         session.clear()
         return msg
 
-def create_user(user):
+def saveHist(hist,rslt):
+    hist[V.resultat] = rslt
+    saveInColl(V.collLog,hist)
+
+def resetPwd(pwd,oobCode):
+    hist = F.crtHist('req@req.req',V.rstRai)
     try:
+        usr = cAuth.verify_password_reset_code(oobCode,pwd)
+        eml = usr['email']
+        hist[V.email]=eml
+        freeUser(eml)
+        saveHist(hist,V.success)
+        return True
+    except Exception as e:
+        e = str(e)
+        l = ''
+        if V.invOob in e:
+            l = V.invOob
+        else: l= V.failure
+        saveHist(hist,l)
+        return False    
+
+
+def create_user(user):
+    hist = F.crtHist(raison='CREATE_USER')
+    l = ''
+    
+    try:
+        
         eml = user[V.email]
-        usr = cAuth.create_user_with_email_and_password(eml,'mmmmmm@99')
-        v = cAuth.send_password_reset_email(eml)
-        return saveInColl(V.collUser,user,V.email)
+        usr = cAuth.create_user_with_email_and_password(eml,'miam===?milouu.%+!!!22')
+        
+        cAuth.send_password_reset_email(eml)
+        rs = saveInColl(V.collUser,user,V.email)
+        
+        if rs:
+            l = V.success
+        else:
+            l = V.failure
+            cAuth.delete_user_account(usr['idToken'])
+        saveHist(hist,l)
+        return rs
+        
+            
     
     except Exception as e:
         if type(e).__name__=='EmailAlreadyExistsError':
-            return False
-        print(e)
+            l = V.emlExist
+        else: l= V.failure
+        # print(e)
+        saveHist(hist,l)
         return None
 
 def checkPwd(pwd):
@@ -282,7 +398,7 @@ def checkPwd(pwd):
         usr = cAuth.sign_in_with_email_and_password(F.sEml(),pwd)
         return True
     except Exception as e:
-        print(e)
+        # print(e)
 
         return False
 

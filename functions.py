@@ -1,3 +1,4 @@
+from itsdangerous import json
 import values as V
 from time import localtime
 from flask import session,url_for
@@ -6,6 +7,7 @@ import numpy as np
 import pandas as pd
 import string
 import random
+import json
 
 gs = lambda k: session.get(k)
 sTk = lambda: gs(V.tk)
@@ -19,6 +21,7 @@ sNvo = lambda: gs(V.niveau)
 sSte = lambda: gs(V.ste)
 isAdm = lambda: sRole()==V.adm
 isSprUsr = lambda: sNvo()==sRole()==V.superUsr
+isBlocked = lambda user: user[V.bloque]==V.isBlocked
 
 def lk(l,k,v):
     c = lambda l1,k1,v1: l1+f'&{k1}={v1}' if '?' in l else f'{l1}?{k1}={v1}'
@@ -44,28 +47,77 @@ getCls = lambda cl: cl[7:-1]
 getChV = lambda chm : V.dateDepart if chm==V.data[V.chemin][V.depart] else V.dateArrivee
 getSt = lambda r: 'ok' if r else 'no'
 
-def mnu_lk(dct):
+def rdJSON(nm):
+    fn = V.filesDir+nm
+    try:
+        if os.path.exists(fn):
+            with open(fn) as f:
+                return json.load(f)
+        return None
+    except:
+        return {}
+
+def saveJSON(nm,doc):
+    fn = V.filesDir+nm
+    try:
+        if os.path.exists(fn):
+            with open(fn,'w') as f:
+                json.dump(doc,f)
+                return True
+        return False
+    except:
+        return False
+        
+
+def crtHist(email=None,raison=''):
+    email = email if email else sTk()
+    idd,dt = crtIdDt()
+    idd1 = crtIdDt()
+    idd2 = crtIdDt()
+    return {
+        'id': dt[:4]+idd+idd1[0]+idd2[0],
+        V.date: dt,
+        V.email: email,
+        V.raison: raison
+    }
+
+mfrm = lambda x,k: """
+<div x-show='xxxxxx' class="w-full bg-opacity-50 h-full fixed block top-0 left-0 bg-white z-50">
+    <div class='text-right w-1/3 mx-auto'>
+        <button class='font-bold text-2xl' @click='xxxxxx=false'>
+        X
+        </button>
+    </div>
+</div>
+""".replace('xxxxxx',x).replace('yyyyyyy',Form(k))
+
+def mnu_lk():
+    dct = {
+        'Creer un utilisateur / Create user':V.links[V.crtUser],
+        'Ajouter un departement / Add department':V.links[V.lkDep]
+    }
     m = ''
     for i in dct.keys():
         m += f'''
         <div class="flex flex-col bg-opacity-75 text-white font-bold justify-between md:w-1/3 w-full p-4 mt-4 rounded-lg md:flex-row md:space-x-8 md:mt-0 md:text-sm md:font-medium md:border-0 dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
-        <div>
-            <a href="{dct[i]}" class="block py-2 pr-4 pl-3 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 md:dark:hover:text-white dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700">
-            {i}
+            <div>
+            <a href='{dct[i]}' class="block py-2 pr-4 pl-3 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 md:dark:hover:text-white dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700">
+                {i}
             </a>
           </div>
         </div>
-          '''
+    '''
     return m
+
 def getVyDt(df,vl,isVol=False):
     if len(df)==0: return []
-    print(df)
-    print(vl)
+    # print(df)
+    # print(vl)
     df = pd.DataFrame(df)
     # print(df)
     df = df[~df[V.lieu].isin(vl)]
     # df = eval(f'df[{"~" if isVol else ""}df[V.lieu].isin(vl)]')
-    print(df,'llllllllll')
+    # print(df,'llllllllll')
     return df.to_dict('records')
     return []
 
@@ -128,7 +180,7 @@ def sortDf(ds,col,isL=False,pub=False):
             if pub!=False:
                 ddf = df[V.trsDspl]
                 pth = os.path.join(os.path.dirname(__file__),'static','liste',pub+'.xlsx')
-                print(rf'{pth}','*'*10)
+                # print(rf'{pth}','*'*10)
                 ddf.to_excel(pth,index=False)
         return df.to_dict('records')
     return []
@@ -182,6 +234,35 @@ banner = lambda msg: """
   </div>
 """.replace('{msg}',msg)
 
+td = lambda vl: f"""<td class="{tcCls}">{vl}</td>"""
+th = lambda vl: f"""<th class="{tcCls}">{vl}</th>"""
+tr = lambda ct: f"""<tr class="w-full">{ct}</tr>"""
+def minTab(flds,lst):
+    
+    mth,mtb = '',''
+    
+    for i in flds:
+        mth += th(i)
+    
+    for i in lst:
+        mtd = ''
+        for j in flds:
+            mtd += td(i[j] if j in i.keys() else '')
+        mtb += tr(mtd)
+        
+    return f"""
+        <div class="overflow-x-auto">
+            <table class="table-auto overflow-y-auto w-full uppercase">
+                <thead class="bg-gray-800 text-center py-2 text-gray-200 w-full ">
+                    {tr(mth)}
+                </thead>
+                <tbody class="bg-grey-light text-center overflow-y-scroll w-full">
+                    {mtb}
+                </tbody>
+            </table>
+        </div> 
+"""
+
 def table(dmds,lnk,val,ttr=None,isL=None,tr=None):
     nb = len(dmds)
     bt = ''
@@ -203,27 +284,13 @@ def table(dmds,lnk,val,ttr=None,isL=None,tr=None):
 		<thead class="bg-gray-800 text-center py-2 text-gray-200 w-full ">
 			<tr class="w-full">
               """
-        tb += f"""
-                <th class="{tcCls} ">
-                    Modifier
-                </th>
-                <th class="{tcCls} ">
-                    Telecharger
-                </th>
-            """ if isL else ''
+        tb += th('Modifier')+th('Telecharger') if isL else ''
 
         for t in ttr:
 
-            tb += f"""
-                <th class="{tcCls}">
-                  {t}
-                </th>
-                    """
+            tb += th(t)
 
-        cTd = f"""
-                <th class="{tcCls} ">
-                </th>
-        """ if not val else ''
+        cTd = tr('') if not val else ''
 
         tb += cTd + """ </tr>
             </thead>
@@ -233,7 +300,7 @@ def table(dmds,lnk,val,ttr=None,isL=None,tr=None):
         for dmd in dmds:
             tb += """
 
-              <tr">
+              <tr class='w-full'>
 
             """
             if isL :
@@ -247,34 +314,22 @@ def table(dmds,lnk,val,ttr=None,isL=None,tr=None):
                 </a>
 
                 """ if tr in os.listdir(lsPth) else ''
-                tb += f"""
-            <td  class="{tcCls}">
+                lk = f'''
                 <a href='{lk(V.links[V.lkListe],['id'],[dmd['id']])}'>
                     <i class='fa fa-edit'></i>
                 </a>
-            </td>
-            <td  class="{tcCls}">
-                {dwnld}
-            </td>
-            """
+                '''
+                tb += td(lk)+td(dwnld)
+            
             # [V.moyen,V.date,V.chemin],[my,jv,chm]
             for t in ttr:
-                tb += f"""
-                <td class="{tcCls}">
-                  {dmd[t]}
-                </td>
-                """
+                tb += td(dmd[t])
             # x = 's' in dmd[V.nomC]
             ckd = 'checked' if (V.publier in dmd.keys() and dmd[V.publier]==V.oui) or (V.statut in dmd.keys() and dmd[V.statut] in [V.valider,V.busAttente]) else ''# and dmd[V.publier]!='Non'
-            cTd = f"""
-
-                <td class="{tcCls}">
-                      <input type="checkbox"  @click="ch" {ckd} name="{dmd['id']}" />
-                </td>
-
+            cTd = f"""<input type="checkbox"  @click="ch" {ckd} name="{dmd['id']}" />
                 """ if not val else ''
 
-            tb += cTd+"</tr>"
+            tb += td(cTd)+"</tr>"
 
         tb += """
             </tbody>
@@ -507,7 +562,7 @@ chNbr = lambda key,val='', md=None : f"""
 chPwd = lambda key: f"""
     <div {dCls}>
         {lbl(key)}
-        <input type="password" {req(key)} name="{key}" min="6"
+        <input type="password" {req(key)} name="{key}" minlength="6"
                 {fCls} />
     </div>
 
@@ -531,6 +586,7 @@ def chSel(key,data=None,md=None):
                     <option hidden selected></option>
             """
     el = V.data[key] if key else data
+    
     for k in el.keys():
         sel += f"""
         <option key='{k}' value='{k}'>{el[k]}</option>
@@ -792,18 +848,21 @@ btn = lambda bt: f"""
 </button>
 """
 
-def Form(key,msg='',rq=None):
+def Form(key,msg='',rq=None,oob=''):
 
     vals = V.formInfos[key]
-    fields,fD = '',''
+    if key==V.rstPwd:
+        vals = vals(oob)
     lk = vals[V.lk]
+        
+    fields,fD = '',''
     r = ",rq[k])" if rq else ')'
     # print(r)
     for k in vals[V.field]:
         # print(k)
         fields += eval("MiniField(k"+ r)
     return f"""
-                <div  class="container py-5 rounded w-full p-5 md:w-2/3 xl:w-2/5 mx-auto flex flex-wrap flex-col md:flex-row bg-gray-100 bg-opacity-25 justify-center items-center">
+                <div  class="py-5 rounded w-full p-5 md:w-2/3 xl:w-2/5 mx-auto flex flex-wrap flex-col md:flex-row bg-gray-100 bg-opacity-25 justify-center items-center">
                     {banner(msg)}
                     <form {fD} action="{lk}" method="post" enctype="multipart/form-data" class="flex w-full flex-col md:w-4/5 justify-center items-start md:text-left items-center">
                         {titleP(vals[V.titre])}
