@@ -67,7 +67,17 @@ def saveJSON(nm,doc):
         return False
     except:
         return False
-        
+
+def saveDept(nm):
+    try:
+        fn = 'depts.json'
+        dc = rdJSON(fn)
+        if nm in dc.keys():
+            return None
+        dc[nm]=nm
+        saveJSON(fn,dc)
+        return True
+    except: return False
 
 def crtHist(email=None,raison=''):
     email = email if email else sTk()
@@ -93,8 +103,8 @@ mfrm = lambda x,k: """
 
 def mnu_lk():
     dct = {
-        'Creer un utilisateur / Create user':V.links[V.crtUser],
-        'Ajouter un departement / Add department':V.links[V.lkDep]
+        'Creer un utilisateur / Create user':V.links[V.lkCrtUsr],
+        'Ajouter un departement / Add department':V.links[V.lkAddDept]
     }
     m = ''
     for i in dct.keys():
@@ -323,7 +333,7 @@ def table(dmds,lnk,val,ttr=None,isL=None,tr=None):
             
             # [V.moyen,V.date,V.chemin],[my,jv,chm]
             for t in ttr:
-                tb += td(dmd[t])
+                tb += td(dmd[t] if t in dmd.keys(t) else '')
             # x = 's' in dmd[V.nomC]
             ckd = 'checked' if (V.publier in dmd.keys() and dmd[V.publier]==V.oui) or (V.statut in dmd.keys() and dmd[V.statut] in [V.valider,V.busAttente]) else ''# and dmd[V.publier]!='Non'
             cTd = f"""<input type="checkbox"  @click="ch" {ckd} name="{dmd['id']}" />
@@ -578,6 +588,9 @@ chEml = lambda key,val='' : f"""
     """
 
 def chSel(key,data=None,md=None):
+    
+    
+    
     sel = f"""
             <div {dCls}>
             {lbl(key)}
@@ -587,10 +600,15 @@ def chSel(key,data=None,md=None):
             """
     el = V.data[key] if key else data
     
-    for k in el.keys():
-        sel += f"""
-        <option key='{k}' value='{k}'>{el[k]}</option>
-        """
+    if key==V.dept:
+        el = rdJSON('depts.json')
+    
+    ks = el.keys()
+    if len(ks)!=0:
+        for k in el.keys():
+            sel += f"""
+            <option key='{k}' value='{k}'>{el[k]}</option>
+            """
 
     sel += '</select></div>'
     return sel

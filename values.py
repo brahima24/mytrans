@@ -122,15 +122,19 @@ invOob = 'INVALID_OOB_CODE'
 rstRai = 'RESET_PASSWORD'
 failure = 'FAILURE'
 success = 'SUCESS'
+addDeptR= 'ADD_NEW_DEPARTMENT'
+deptExist = 'DEPT_EXIST'
 deptNm = 'nom'
 modifDate = 'modif_date'
 lkRstPwd = 'resetPassword'
 rstPwd = 'resetPwd'
 pwdConf = 'pwdConf'
-lkAdd = 'add'
+lkAddDept = 'lkAddDept'
 confPar = 'confirmer_par'
+msg = 'msg'
 valPar = 'valider_par'
 creePar = 'creer_par'
+collDept = dept
 statuts = {
     valider: valider,
     confirmer: confirmer,
@@ -154,7 +158,8 @@ labels = {
     password: 'Mot de passe / Password',
     pwdConf: 'Confirmez le mot de passe / Confirm password',
     prenom: 'Prenom / Fist name',
-    nom:'Nom / Last name',
+    deptNm:'Nom du departement / Department name',
+    nom:'Nom du departement / Department name',
     nomC: 'Noms & Prénoms / Names & Surnames',
     dept: 'Département / Department',
     costCode: 'Cost code',
@@ -172,6 +177,7 @@ labels = {
 
 }
 links = {
+    lkAddDept: '/addDept',
     lkRstPwd : '/resetPassword',
     lkCrtUsr: '/crtUsr',
     lkConnDmd: '/usrDmd',
@@ -186,7 +192,7 @@ links = {
     lkDmdSt: '/demande',
     lkVoy:'/voyage',
     lkChm: lambda l: f'/voyage/{l}',
-    lkAdd: '/addDept',
+    # lkAdd: '/addDept',
     # lkDep: f'/voyage/{depart}',
     # lkRet: f'/{retour}',
     lkListDisp: '/liste',
@@ -202,7 +208,7 @@ fmtFrm = lambda tt,fld,lb,l :{
 rsLk = lambda vl: links[lkRstPwd]+ f'?{oobCode}={vl}' if vl else ''
 formInfos = {
     rstPwd: lambda vl: fmtFrm('Reinitialisation de mote de passe / Resetting password', [password,pwdConf],'Confirmez / Confirm',rsLk(vl)),
-    dept: fmtFrm('Ajout d\'un nouveau departemt / Adding new department',[deptNm],'Ajouter/Add','#'),
+    dept: fmtFrm('Ajout d\'un nouveau departemt / Adding new department',[deptNm],'Ajouter/Add',links[lkAddDept]),
     login: {
         titre: '',
         field: [email,password],
@@ -269,6 +275,12 @@ dmdMsg = lambda st: f"""
     Une demande {'approuvée' if st == confirmer else 'validée'} ne vous garantit pas une place!! <br />
     {'Approved' if st == confirmer else 'Valid'} request doesn't garantee you a seat!!
     """
+msgs = {
+    dept: {
+        titre: 'Sucess',
+        msg: 'Deoartement ajoutee'
+    }
+}
 imgs = lambda my: f"img/{'bus' if my == bus else 'plane'}.png"
 deptEng = 'Engineering'
 deptAdm='Admin'

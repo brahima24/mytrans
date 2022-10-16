@@ -54,13 +54,46 @@ def rstPwd():
 def spAdm():
     return render_template('sprusr.html',V=V,F=F,titre='SP-USR')
 
-@app.route(V.links[V.lkSpUsr]('addDept'),methods=['POST'])
+@app.route(V.links[V.lkAddDept],methods=['GET','POST'])
 @A.allArgs
 @A.chkTk
 def addDept():
+    dp = lambda msg='',req={}: A.form('Ajouter un departement / Add Depatment',V.dept,msg,req)
     
-    return render_template('sprusr.html',V=V,F=F,titre='SP-USR')
+    if A.isGet():
+        return dp()
+    nm = request.form[V.deptNm]
+    hist = F.crtHist(raison=V.addDeptR)
+    idd,dt = F.crtIdDt()
+    depts = {
+        'id': idd,
+        V.date: hist[V.date],
+        V.modifDate: hist[V.date],
+        V.deptNm: nm
+    }
+    rs = F.saveDept(nm)
+    if rs:
+        if A.saveInColl(V.collDept,depts):
+            # l = 
+            A.saveHist(hist,V.success)
+            # return True
+            return redirect('/msg/'+V.dept)
+        A.saveHist(hist,V.failure)
+        return dp('Ressayer plus tard / Try later',request.form)
+        # l = V.deptExist
+    A.saveHist(hist,V.deptExist)
+    return dp('Cet departement existe / Department exists',request.form)
+# else:
+    # l = V.failure
 
+@app.route('/msg/<lk>')
+def msgg(lk):
+    ms = lambda t,m: render_template('msg.html',V=V,F=F,titre=t,msg=m)
+
+    if lk in V.msgs.keys():
+        v = V.msgs[lk]
+        return ms(v[V.titre],v[V.msg])
+    return ms('Echec','Ressayer plus tard!')
 
 @app.route(V.links[V.lkCrtUsr], methods=['GET','POST'])
 @A.allArgs
