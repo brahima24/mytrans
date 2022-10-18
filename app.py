@@ -14,7 +14,6 @@ Session(app)
 
 @app.route('/')
 @A.allArgs
-# @A.deAuth
 def home():
     if F.isSprUsr():
         return redirect(V.links[V.lkSpUsr]())
@@ -28,6 +27,7 @@ def home():
 @app.route(V.links[V.lkRstPwd], methods=['GET','POST'])
 
 @A.rstArgs
+@A.deAuth
 def rstPwd():
     oob = dict(request.args)[V.oobCode]
     rst = lambda msg='': A.form('Reinitialisation / Resetting',V.rstPwd,msg,oob=oob)
@@ -44,7 +44,8 @@ def rstPwd():
         rs = A.resetPwd(pwd,oob)
         if rs: 
             return redirect(V.links[V.login])
-        else: rst('Ressayer plus tard!!!')
+        elif rs is False: return rst('Ressayer plus tard!!!')
+        return rst('Ce lien a expiré, contacter le service support!')
     except Exception as e:
         return rst('Ressayer plus tard!!!')
 

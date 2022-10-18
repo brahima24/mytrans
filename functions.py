@@ -1,4 +1,3 @@
-from itsdangerous import json
 import values as V
 from time import localtime
 from flask import session,url_for

@@ -1,16 +1,16 @@
 from flask import render_template,session,redirect,request
-from matplotlib.style import use
-from numpy import save
+# from matplotlib.style import use
+# from numpy import save
 # from requests import HTTPError
 import requests
 import values as V
 import functions as F
 import configs as C
 from functools import wraps
-import datetime
+# import datetime
 import os
 import pyrebase
-import pandas as pd
+# import pandas as pd
 import firebase_admin
 from firebase_admin import credentials, firestore,auth
 current_dir = os.getcwd()
@@ -357,10 +357,11 @@ def resetPwd(pwd,oobCode):
         l = ''
         if V.invOob in e:
             l = V.invOob
+            saveHist(hist,l)
+            return None
         else: l= V.failure
         saveHist(hist,l)
         return False    
-
 
 def create_user(user):
     hist = F.crtHist(raison='CREATE_USER')
