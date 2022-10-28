@@ -50,10 +50,12 @@ def rdJSON(nm):
     fn = V.filesDir+nm
     try:
         if os.path.exists(fn):
+            print('Miammmm')
             with open(fn) as f:
                 return json.load(f)
-        return None
-    except:
+        return {}
+    except Exception as e:
+        print(str(e),'__Read_JSONNN__')
         return {}
 
 def saveJSON(nm,doc):
@@ -76,8 +78,10 @@ def saveDept(nm):
         dc[nm]=nm
         saveJSON(fn,dc)
         return True
-    except: return False
-
+    except Exception as e:
+        print(str(e),'__Saveee_JSONNN__')
+        return False
+    
 def crtHist(email=None,raison=''):
     email = email if email else sTk()
     idd,dt = crtIdDt()
@@ -246,6 +250,7 @@ banner = lambda msg: """
 td = lambda vl: f"""<td class="{tcCls}">{vl}</td>"""
 th = lambda vl: f"""<th class="{tcCls}">{vl}</th>"""
 tr = lambda ct: f"""<tr class="w-full">{ct}</tr>"""
+
 def minTab(flds,lst):
     
     mth,mtb = '',''
@@ -277,6 +282,7 @@ def table(dmds,lnk,val,ttr=None,isL=None,tr=None):
     bt = ''
     tt = tr if tr else 'Il n\'y a pas de demande!!'
     tb =''
+    xdt = ''
     if nb!=0:
         tt = tr if tr else f'Il y\'a {nb} demandes!'
         bt = f"""
@@ -299,18 +305,18 @@ def table(dmds,lnk,val,ttr=None,isL=None,tr=None):
 
             tb += th(t)
 
-        cTd = tr('') if not val else ''
+        cTd = th('') if not val else ''
 
-        tb += cTd + """ </tr>
+        tb += cTd+th('Miamm') + """ </tr>
             </thead>
 		<tbody class="bg-grey-light text-center overflow-y-scroll w-full">
             """
-
         for dmd in dmds:
-            tb += """
-
-              <tr class='w-full'>
-
+            nid = f'a{dmd["id"]}'
+            xdt += f'{nid}: false,'
+            
+            tb += f"""
+              <tr class='w-full' @mouseleave="{nid} = false" >
             """
             if isL :
                 my,jv,chm = dmd[V.moyen],dmd[V.jourDeVoyage],dmd[V.chemin]
@@ -323,33 +329,33 @@ def table(dmds,lnk,val,ttr=None,isL=None,tr=None):
                 </a>
 
                 """ if tr in os.listdir(lsPth) else ''
-                lk = f'''
+                ll = f'''
                 <a href='{lk(V.links[V.lkListe],['id'],[dmd['id']])}'>
                     <i class='fa fa-edit'></i>
                 </a>
                 '''
-                tb += td(lk)+td(dwnld)
+                tb += td(ll)+td(dwnld)
             
             # [V.moyen,V.date,V.chemin],[my,jv,chm]
             for t in ttr:
-                tb += td(dmd[t] if t in dmd.keys(t) else '')
+                tb += td(dmd[t] if t in dmd.keys() else '')
             # x = 's' in dmd[V.nomC]
             ckd = 'checked' if (V.publier in dmd.keys() and dmd[V.publier]==V.oui) or (V.statut in dmd.keys() and dmd[V.statut] in [V.valider,V.busAttente]) else ''# and dmd[V.publier]!='Non'
             cTd = f"""<input type="checkbox"  @click="ch" {ckd} name="{dmd['id']}" />
                 """ if not val else ''
-
-            tb += td(cTd)+"</tr>"
+            cc = f'<span x-show="{nid}"> Okk </span>'
+            tb += td(cTd)+td(cc)+"</tr>"
 
         tb += """
-            </tbody>
-	</table>
-</div>
+                        </tbody>
+                </table>
+            </div>
         """
     sl = """
     <span  x-text='`Nombres selectionnes: ${nb}`'></span>
     """ if nb!=0 else ''
-    ctt = """
-    <div class='w-5/6 h-screen px-2' >
+    ctt = f"""
+    <div class='w-5/6 h-screen px-2' x-data="{'{'+xdt+'}'}" >
     """
     ctt += f"""
         <form
@@ -586,10 +592,10 @@ chEml = lambda key,val='' : f"""
 
     """
 
-def chSel(key,data=None,md=None):
+def chSel(key,data={},md=None):
     
     
-    
+    el = {}
     sel = f"""
             <div {dCls}>
             {lbl(key)}
@@ -597,14 +603,14 @@ def chSel(key,data=None,md=None):
                         {fCls}>
                     <option hidden selected></option>
             """
-    el = V.data[key] if key else data
+    el = rdJSON('depts.json') if key==V.dept else V.data[key] if key else data
     
-    if key==V.dept:
-        el = rdJSON('depts.json')
+    # if key==V.dept:
+    #     el = rdJSON('depts.json')
     
     ks = el.keys()
     if len(ks)!=0:
-        for k in el.keys():
+        for k in ks:
             sel += f"""
             <option key='{k}' value='{k}'>{el[k]}</option>
             """
@@ -833,26 +839,29 @@ Msg = lambda m: f"""
 menu = lambda : usrMenu(f"{gs(V.prenom)} {gs(V.nom)}",gs(V.email),f"{gs(V.prenom)[0]}{gs(V.nom)[0]}".upper()) if gs(V.tk) else dfltMenu
 
 def MiniField(key,val=''):
-
-    if key in V.textType:
-        return chTxt(key,val,)
-    elif key in V.pwdType:
-        return chPwd(key)
-    elif key == V.email:
-        return chEml(key,val)
-    elif key == V.nbrEnf:
-        return chAg()
-    elif key in V.nbrType:
-        return chNbr(key,val)
-    elif key in V.slctType:
-        return chSel(key,md=key)
-    elif key == V.date:
-        return chDate()
-    elif key==V.sDt:
-        return chSDt(val)
-    # elif key in [V.image,V.icn]:
-    #     return chImg(key)
-
+    try:
+        if key in V.textType:
+            return chTxt(key,val,)
+        elif key in V.pwdType:
+            return chPwd(key)
+        elif key == V.email:
+            return chEml(key,val)
+        elif key == V.nbrEnf:
+            return chAg()
+        elif key in V.nbrType:
+            return chNbr(key,val)
+        elif key in V.slctType:
+            return chSel(key,md=key)
+        elif key == V.date:
+            return chDate()
+        elif key==V.sDt:
+            return chSDt(val)
+        # elif key in [V.image,V.icn]:
+        #     return chImg(key)
+    except Exception as e:
+        print(str(e))
+        return ''
+# os.p
 titleP = lambda ttr: f"""
 <div class="text-center font-semibold text-black pb-12">
     {ttr}
@@ -866,26 +875,30 @@ btn = lambda bt: f"""
 """
 
 def Form(key,msg='',rq=None,oob=''):
+    try:
+        vals = V.formInfos[key]
+        if key==V.rstPwd:
+            vals = vals(oob)
+        lk = vals[V.lk]
+        # print(rq,'mm'*12)
+            
+        fields,fD = '',''
+        r = ",rq[k])" if rq else ')'
+        # print(r)
+        for k in vals[V.field]:
+            # print(k)
+            fields += eval("MiniField(k"+ r)
+        return f"""
+                    <div  class="py-5 rounded w-full p-5 md:w-2/3 xl:w-2/5 mx-auto flex flex-wrap flex-col md:flex-row bg-gray-100 bg-opacity-25 justify-center items-center">
+                        {banner(msg)}
+                        <form {fD} action="{lk}" method="post" enctype="multipart/form-data" class="flex w-full flex-col md:w-4/5 justify-center items-start md:text-left items-center">
+                            {titleP(vals[V.titre])}
+                            {fields}
+                            {btn(vals[V.lbl])}
+                        </form>
+                    </div>
 
-    vals = V.formInfos[key]
-    if key==V.rstPwd:
-        vals = vals(oob)
-    lk = vals[V.lk]
-        
-    fields,fD = '',''
-    r = ",rq[k])" if rq else ')'
-    # print(r)
-    for k in vals[V.field]:
-        # print(k)
-        fields += eval("MiniField(k"+ r)
-    return f"""
-                <div  class="py-5 rounded w-full p-5 md:w-2/3 xl:w-2/5 mx-auto flex flex-wrap flex-col md:flex-row bg-gray-100 bg-opacity-25 justify-center items-center">
-                    {banner(msg)}
-                    <form {fD} action="{lk}" method="post" enctype="multipart/form-data" class="flex w-full flex-col md:w-4/5 justify-center items-start md:text-left items-center">
-                        {titleP(vals[V.titre])}
-                        {fields}
-                        {btn(vals[V.lbl])}
-                    </form>
-                </div>
-
-            """
+                """
+    except Exception as e:
+        print(str(e))
+        return 'Probleme veuillez reesayer'

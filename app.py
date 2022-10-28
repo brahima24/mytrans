@@ -19,10 +19,11 @@ def home():
         return redirect(V.links[V.lkSpUsr]())
     elif F.sTk():
         return redirect(V.links[V.lkConn])
+    # tb = F.table(V.vDt,'/ll','Miam')
     # print(F.lkV('bus'))
-    # tb = F.table(V.vDt,'','')
+    tb = F.table(V.vDt,'','')
     # return 'ppppp'
-    return render_template('home.html', F=F,V=V,titre='Accueil', tb = '' )
+    return render_template('home.html', F=F,V=V,titre='Accueil', tb = tb )
 
 @app.route(V.links[V.lkRstPwd], methods=['GET','POST'])
 

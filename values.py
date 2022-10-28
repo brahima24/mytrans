@@ -124,7 +124,7 @@ failure = 'FAILURE'
 success = 'SUCESS'
 addDeptR= 'ADD_NEW_DEPARTMENT'
 deptExist = 'DEPT_EXIST'
-deptNm = 'nom'
+deptNm = 'dept_name'
 modifDate = 'modif_date'
 lkRstPwd = 'resetPassword'
 rstPwd = 'resetPwd'
@@ -159,7 +159,7 @@ labels = {
     pwdConf: 'Confirmez le mot de passe / Confirm password',
     prenom: 'Prenom / Fist name',
     deptNm:'Nom du departement / Department name',
-    nom:'Nom du departement / Department name',
+    nom: 'Nom / Last Name',
     nomC: 'Noms & Prénoms / Names & Surnames',
     dept: 'Département / Department',
     costCode: 'Cost code',
@@ -337,7 +337,7 @@ nbrPer = {
 }
 
 
-textType = [prenom,badge,nom,id,sc,nomC,raison]
+textType = [prenom,badge,nom,id,sc,nomC,deptNm,raison]
 isMod = [lieu,trainee,badge,nbrEnf,sc]
 pwdType = [password,pwdConf]
 nbrType = [costCode,numero,nbrEnf]

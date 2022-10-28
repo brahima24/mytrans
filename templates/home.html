@@ -4,7 +4,7 @@
 {% set F = F %}
 {% block content %}
 
-<div class="container mx-auto h-screen">
+<div class="container mx-auto h-screen" x-data="{a:false}">
     <div class="text-center px-3 lg:px-0">
       <h1
         class="my-4 text-2xl md:text-3xl lg:text-5xl font-black leading-tight"
@@ -17,12 +17,15 @@
         Cette page vous permettra de faire une demande, suivre le statut de la demande et voir la liste des transports!!
       </p>
     </div>
+    {{tb|safe}}
 
+    <div x-show="a" class="">MiammmmmmmmMMMMMiammmmmmm</div>
+    <div class="" @mouseenter="a = true" @mouseleave="timeout = setTimeout(() => { a = false }, 300)" >OKKK</div>
 
     <div class="flex items-center w-full mx-auto content-end">
-      <!--<div-->
-      <!--  class="browser-mockup flex flex-1 m-6 md:px-0 md:m-12 bg-white w-1/2 rounded shadow-xl"-->
-      <!--></div>-->
+      <div
+       class="browser-mockup flex flex-1 m-6 md:px-0 md:m-12 bg-white w-1/2 rounded shadow-xl">
+      </div>
           <img src="{{url_for('static',filename='img/img.jpeg')}}" class="w-full mx-1 md:mx-auto md:w-5/6" alt="mmm " />
 
     </div>
