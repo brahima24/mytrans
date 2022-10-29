@@ -145,12 +145,13 @@ def conn(tp):
     form = request.form
     id,dt = F.crtIdDt()
     for i in form.keys():
-        up = {
-            V.statut: V.statuts[V.confirmer],
-            V.confPar: F.sEml(),
-            V.dateConf:dt,
-        }
-        A.updt(V.collDmd,i,dct=up)
+        if A.chkNivo(i):
+            up = {
+                V.statut: V.statuts[V.confirmer],
+                V.confPar: F.sEml(),
+                V.dateConf:dt,
+            }
+            A.updt(V.collDmd,i,dct=up)
 
     return redirect(lk)
 
@@ -551,11 +552,13 @@ def demande():
             req=True
         if req!=True: return dTemp(req)
         dmd[V.statut] = V.statuts[V.attente]
+        
+        for k in dmd.keys():
+            dmd[k] = F.rmSpc(dmd[k])
+            
         dmd[V.niveau] = 0
         nb = int(dmd[V.nbrEnf])
-        dmd[V.nbrEnf] = nb
-        for k in dmd.keys():
-            dmd[k] = F.rmSpc(dmd[k]) #if type(dmd[k]).__name__=='str' else dmd[k]
+        dmd[V.nbrEnf] = nb #if type(dmd[k]).__name__=='str' else dmd[k]
         r = A.saveInColl(V.collDmd,dmd)
         # st = F.getSt() #'ok' if r else 'no'
 

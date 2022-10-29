@@ -92,6 +92,14 @@ def rstArgs(func):
         # Extend some capabilities of func
     return wrapper
 
+def chkNivo(id):
+    try:
+        dmd = getData(V.collDmd,id)
+        if dmd:
+            return int(F.sNvo())>int(dmd[V.niveau])
+        return False
+    except:
+        return False
 
 def lArgs(func):
     @wraps(func)
@@ -131,6 +139,10 @@ def notTk():
     session.clear()
     return redirect(V.links[V.login])
 
+def setTks(user):
+    session[V.tk] = user['idToken']
+    session[V.rTk] = user['refreshToken']
+    
 def chkTk(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -138,6 +150,8 @@ def chkTk(func):
         if session.get(V.tk) is not None:
             try:
                 user = auth.verify_id_token(session.get(V.tk))
+                user = cAuth.refresh(session.get(V.rTk))
+                setTks(user)
             except:
                 return notTk()
             return func(*args, **kwargs)
@@ -278,11 +292,12 @@ def conn(email,pwd):
         usr = cAuth.sign_in_with_email_and_password(email,pwd)
         # print(usr)
         tk = usr['idToken']
+        # rtk = usr['refreshToken']
         usrInf = cAuth.get_account_info(tk)
         # print(usrInf)
-        # if not usrInf['users'][0]['emailVerified']:
-        #     cAuth.send_password_reset_email(email)
-        #     return f'Desolé cet email vous devez change votre mot de passe, un email vient de vous etre adreese a l\'email {email} !!'
+        if not usrInf['users'][0]['emailVerified']:
+            cAuth.send_password_reset_email(email)
+            return f'Desolé cet email vous devez change votre mot de passe, un email vient de vous etre adreese a l\'email {email} !!'
         user = getData(V.collUser,email)
         # print(user)
         if user:
@@ -297,7 +312,9 @@ def conn(email,pwd):
             
             for i in user.keys():
                 session[i] = user[i]
-            session[V.tk] = tk
+            # session[V.tk] = tk
+            # session[V.rTk] = rtk
+            setTks(usr)
             hist[V.resultat] = V.cntd
             
             saveInColl(V.collLog,hist)
@@ -388,7 +405,8 @@ def create_user(user):
     except Exception as e:
         if type(e).__name__=='EmailAlreadyExistsError':
             l = V.emlExist
-        else: l= V.failure
+        else:
+            l = V.failure
         # print(e)
         saveHist(hist,l)
         return None

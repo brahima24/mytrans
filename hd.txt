@@ -1,0 +1,34 @@
+# httpd.exe -k install -n mytrans -f "C:\Apache24\conf\mytrans.conf"
+# httpd.exe -k restart -n mytrans
+
+#Java Installation
+sudo apt-get install openjdk-8-jdk-headless -qq > /dev/null
+
+sudo nano /etc/environment
+JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
+
+#Après recharger le fichier avec: 
+source /etc/environment
+
+
+# Apache Installation
+sudo apt install apache2 # Installation du serveur apache
+sudo apt install libapache2-mod-wsgi-py3
+#Chamger la valeur de Timeout: 604800 
+sudo nano /etc/apache2/apache2.conf 
+
+#Installation
+sudo apt install python3-pip
+sudo -H pip3 install flask Flask-Session pyrebase4 os pandas numpy firebase-admin functools
+
+sudo chmod a+rwx nom_du_fichier
+# Pour les autres :
+sudo chmod a+rx nom_du_fichier
+# Pour changer le pro
+sudo adduser nom_d_utilisateur_du_pc www-data : ajouter nouveau utilisateur
+sudo chown -R www-data:www-data /var/www
+
+sudo a2ensite mytrans.conf
+
+#server Start
+sudo service apache2 start
