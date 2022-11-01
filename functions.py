@@ -9,6 +9,7 @@ import random
 import json
 
 gs = lambda k: session.get(k)
+sNum = lambda: gs(V.numero)
 sTk = lambda: gs(V.tk)
 sEml = lambda: gs(V.email)
 sNom = lambda: gs(V.nom)
@@ -770,6 +771,12 @@ usrMenu = lambda nom,eml,init : """
                         <div class="border-b"></div>
 
                      <ul class="py-1" aria-labelledby="dropdown">
+                        <li>
+                            <a class="block px-4 py-2 mt-2 text-sm bg-white md:mt-0 focus:text-gray-900 hover:bg-indigo-100 focus:bg-gray-200 focus:outline-none focus:shadow-outline"
+                                href="/dmds">
+                                Mes demandes
+                            </a>
+                        </li>
                         <li>
                             <a class="block px-4 py-2 mt-2 text-sm bg-white md:mt-0 focus:text-gray-900 hover:bg-indigo-100 focus:bg-gray-200 focus:outline-none focus:shadow-outline"
                                 href="/logout">

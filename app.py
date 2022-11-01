@@ -174,6 +174,15 @@ def login():
             return redirect(V.links[V.lkConn])
         else: return A.form(ttr,V.login,conn,request.form)
 
+@app.route('/dmds')
+@A.allArgs
+@A.deAuth
+def dmds():
+    ct = A.Ctrt(V.email,'==',F.sEml())
+    # ct.add(V.statut,'==',V.)
+    dmds = A.getAllData(V.collDmd,ct)
+    return render_template('dmds.html',V=V,F=F,ctt=F.minTab(V.usrDspl,dmds))
+
 
 @app.route(V.links[V.lkListe], methods=['GET','POST'])
 # @A.lArgs
@@ -495,8 +504,11 @@ def conn_dmd():
     dmd[V.statut] = V.confirmer if F.sNvo()==V.elevee else V.attente
     dmd[V.dept] = F.sDept()
     dmd[V.ste] = F.sSte()
+    dmd[V.email] = F.sEml()
+    dmd[V.numero] = F.sNum()
+    
     nt = "*"*7
-    for k in [V.numero,V.raison,V.sc,V.trainee,V.heberger]:
+    for k in [V.sc,V.trainee,V.heberger]:
         dmd[k] = nt
     # dmd[V.nbrEnf] = 0
     r = A.saveInColl(V.collDmd,dmd)
@@ -526,7 +538,6 @@ def demande():
             'id': id,
             'date': dt
         }
-
         li = form[V.lieu]
         form,dmd = F.transDate(form,dmd)
 

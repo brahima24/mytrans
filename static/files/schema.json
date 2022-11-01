@@ -6,11 +6,11 @@
         "date_retour":"varchar(50)",
         "departement":"varchar(50)",
         "heberger":"varchar(50)",
-        "id":"varchar(50)",
+        "id":"varchar(50) primary key",
         "lieu":"varchar(50)",
         "moyen":"varchar(50)",
         "niveau":"int",
-        "nom_complet":"varchar(50)",
+        "nom_complet":"varchar(100)",
         "nombre_enfant":"int",
         "numero":"int",
         "raison":"varchar(50)",
@@ -18,25 +18,37 @@
         "sous_couvert":"varchar(50)",
         "statut":"varchar(60)",
         "trainee":"varchar(50)",
-        "email":"varchar(100)"
+        "email":"varchar(100)",
+        "date_confirmation":"varchar(50)",
+        "confirmer_par":"varchar(100)",
+        "valider_par": "varchar(50)"
+    },
+    "liste":{
+        "id":"varchar(50) primary key",
+        "creer_par":"varchar(100)",
+        "date":"varchar(50)",
+        "jour_de_voyage":"varchar(50)",
+        "moyen":"varchar(50)",
+        "publier": "varchar",
+        "chemin": "varchar(50)"
     },
     "departement":{
         "date":"varchar(50)",
         "dept_name":"varchar(50)",
-        "id":"varchar(50)",
+        "id":"varchar(50) primary key",
         "modif_date":"varchar(50)"
     },
     "log":{
         "date":"varchar(50)",
         "email":"varchar(100)",
-        "id":"varchar(100)",
+        "id":"varchar(100) primary key",
         "raison":"varchar(50)",
         "resultat":"varchar(50)"
     },
-    "user":{
+    "utilisateur":{
         "bloque":"varchar(50)",
         "departement":"varchar(50)",
-        "email":"varchar(100)",
+        "email":"varchar(100) primary key",
         "nb_tentative":"int",
         "niveau":"int",
         "nom":"varchar(50)",

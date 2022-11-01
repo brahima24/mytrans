@@ -191,7 +191,7 @@ def saveInColl(clt,doc,cid='id'):
     except:
         return False
 
-def getAllData(coll,ctrt: Ctrt=None):
+def getAllData(coll,ctrt: Ctrt=None,k=None,v=None):
 
     if ctrt is None:
         data = db.collection(coll).order_by('id').stream()
@@ -210,8 +210,13 @@ def getAllData(coll,ctrt: Ctrt=None):
     l = []
 
     for c in data:
-        if c.exists: l.append(c.to_dict())
-
+        if c.exists: 
+            vl = c.to_dict()
+            if k and v:
+                if vl[k]==v:
+                    l.append(vl)
+                # else: pass
+            else: l.append(vl)
     return l
 
 def chkLst(my,dte):
@@ -272,7 +277,7 @@ def getConnData(coll=None):
     #     data = getAllData(coll if coll else V.collDmd, ctrt)
     # else:
     ctrt = Ctrt(V.dept,'==',F.sDept())
-    # ctrt.add(V.dept,'==',F.sDept())
+    ctrt.add(V.niveau,'>',int(F.sNvo()))
     ctrt.add(V.statut,'==',V.attente)
     data = getAllData(coll if coll else V.collDmd,ctrt)
     data = data if len(data)==0 else F.sortDf(data,V.date)

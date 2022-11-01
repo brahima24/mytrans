@@ -1,7 +1,7 @@
 import pyodbc
 import pandas as pd
 import os
-
+import functions as F
 
 class Values():
     
@@ -169,21 +169,51 @@ class Funcs():
 
 v = Values()
 f = Funcs()
+
 class SQL():
     
     def __init__(self):
-        self.conn = pyodbc.connect('Driver={SQL Server};'
-                                        'Server=BRA-SOGODOGO;'
-                                        'Database=mytrans;'
-                                        'Trusted_Connection=yes;'
-                                    )
+        pass
+        # self.conn = pyodbc.connect('Driver={SQL Server};'
+        #                                 'Server=BRA-SOGODOGO;'
+        #                                 'Database=mytrans;'
+        #                                 'Trusted_Connection=yes;'
+        #                             )
+        
+        # self.cursor = self.conn.cursor()
     
     
     pdQry = lambda self,qry: pd.read_sql_query(qry,self.conn).fillna(v.na)
     
     def excQry(self, qry):
-        cursor = self.conn.cursor()
-        cursor.execute(qry)
+        # cursor = self.conn.cursor()
+        self.cursor.execute(qry)
+        self.conn.commit()
+        
+    def getConnData(self):
+        data = []
+        ct = Constraint()
+        
+    def crtTab(self):
+        
+        def crTb(nm,dt):
+            try:
+                    
+                fl = ""
+                
+                for i in dt.keys():
+                    fl += f"{i} {dt[i]},"
+                fl = fl[:-1]
+                
+                qry = f"""create table {nm}({fl})"""
+                self.excQry(qry)
+            except:
+                return False
+            return True
+        tabs = F.rdJSON('schema.json')
+        for i in tabs.keys():
+            crTb(i,tabs[i])
+
 
     def getAllData(self,tab: str, fields: list=None ,ctrt: Constraint=None):
         qry = f.makeQuery(tab,fields,ctrt)
@@ -216,7 +246,7 @@ class SQL():
                 """
                 # print(qry)
                 self.excQry(qry)
-                self.conn.commit()
+                # self.conn.commit()
             return True
         except Exception as e:
             # print(str(e))
