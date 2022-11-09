@@ -136,6 +136,9 @@ msg = 'msg'
 valPar = 'valider_par'
 creePar = 'creer_par'
 collDept = dept
+lkTbLst = 'listes_bd'
+spUsrLkFn = lambda l='':'/superuser/'+l
+# lkStats = 'stats'
 statuts = {
     valider: valider,
     confirmer: confirmer,
@@ -198,7 +201,10 @@ links = {
     # lkRet: f'/{retour}',
     lkListDisp: '/liste',
     lkUrg: '/urgence',
-    lkSpUsr: lambda l='':'/superuser/'+l 
+    lkSpUsr: lambda l='':spUsrLkFn(l) ,
+    # lkStats: '/stats',
+    
+    lkTbLst: lambda l='<tb>',m=False:spUsrLkFn(f'''/liste/{l+('/modifer' if m else '')}''')
 }
 fmtFrm = lambda tt,fld,lb,l :{
         titre: tt,
@@ -259,9 +265,20 @@ formInfos = {
 
 }
 spUsrMnu = {
+    'Accueil': '/',
     'Creer un utilisateur': links[lkCrtUsr],
-    'Ajouter un dwepartement': ''
+    # 'Suivre une demande': links[lkStatut],
+    # 'Liste de transport': links[lkListDisp]
+    'Ajouter un departement': links[lkAddDept],
+    'Liste des utilisateurs': links[lkTbLst](collUser),
+    'Liste des departements': links[lkTbLst](collDept),
 }
+# {
+    # 'Creer un utilisateur': links[lkCrtUsr],
+    # 'Ajouter un departement': ''
+# }
+tb_nm = lambda l: f"Liste des {l}"
+
 siteMenu = {
     'Accueil': '/',
     'Faire une demande': links[lkDmd],
@@ -279,7 +296,7 @@ dmdMsg = lambda st: f"""
 msgs = {
     dept: {
         titre: 'Sucess',
-        msg: 'Deoartement ajoutee'
+        msg: 'Departement ajouté!'
     }
 }
 imgs = lambda my: f"img/{'bus' if my == bus else 'plane'}.png"
@@ -336,8 +353,6 @@ nbrPer = {
     bus: 10,
     avion: 1
 }
-
-
 textType = [prenom,badge,nom,id,sc,nomC,deptNm,raison]
 isMod = [lieu,trainee,badge,nbrEnf,sc]
 pwdType = [password,pwdConf]
@@ -347,8 +362,13 @@ notReq = [sc,trainee,badge,heberger]
 dmdDate = [dateDepart,dateArrivee]
 usrDspl = [badge,nomC,ste,lieu,sc,raison,dateDepart,dateArrivee]
 lstDspl = [moyen,chemin,jourDeVoyage,publier]
+usrTab = [email,prenom,nom,badge,numero,dept,role,bloque,niveau,]
 admDspl = usrDspl+[lieu,moyen,niveau]
 trsDspl = [no,id,nomC,ste,badge,statut]
+tableList = {
+    collDept: [tb_nm('departements'),[deptNm]],
+    collUser: [tb_nm('utilisateurs!'),usrTab],
+}
 bus_retour = [1,3,5]
 bus_depart = [0,2,4]
 vol = [2,4]

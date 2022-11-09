@@ -29,7 +29,7 @@
         "date":"varchar(50)",
         "jour_de_voyage":"varchar(50)",
         "moyen":"varchar(50)",
-        "publier": "varchar",
+        "publier": "varchar(50)",
         "chemin": "varchar(50)"
     },
     "departement":{
@@ -54,6 +54,9 @@
         "nom":"varchar(50)",
         "prenom":"varchar(50)",
         "role":"int",
-        "societe":"varchar(50)"
+        "societe":"varchar(50)",
+        "numero":"int",
+        "badge":"varchar(50)",
+        "date":"varchar(50)"
     }
 }

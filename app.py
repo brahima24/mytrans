@@ -3,6 +3,7 @@ from flask import Flask, render_template, request,redirect,session
 from flask_session import Session
 import values as V
 import functions as F
+import sql as S
 # from waitress import serve
 import api as A
 
@@ -21,7 +22,7 @@ def home():
         return redirect(V.links[V.lkConn])
     # tb = F.table(V.vDt,'/ll','Miam')
     # print(F.lkV('bus'))
-    tb = F.table(V.vDt,'','')
+    tb = ''#F.table(V.vDt,'','')
     # return 'ppppp'
     return render_template('home.html', F=F,V=V,titre='Accueil', tb = tb )
 
@@ -49,6 +50,35 @@ def rstPwd():
         return rst('Ce lien a expiré, contacter le service support!')
     except Exception as e:
         return rst('Ressayer plus tard!!!')
+
+@app.route(V.links[V.lkTbLst]())
+@A.allArgs
+@A.chkTk
+@A.chkSprUsr
+def tb_list(tb):
+    # print(tb)
+    tbl = V.tableList[tb]
+    dt = A.getAllData(tb)
+    return A.table(tbl[0], F.dbTbLst(tbl[1],dt))
+
+@app.route(V.links[V.lkTbLst]())
+@A.allArgs
+@A.chkTk
+@A.chkSprUsr
+def modif_tb_list(tb):
+    # print(tb)
+    tbl = V.tableList[tb]
+    dt = A.getAllData(tb)
+    return A.table(tbl[0], F.minTab(tbl[1],dt))
+
+# @app.route('/users')
+# @A.allArgs
+# @A.chkTk
+# @A.chkSprUsr
+# def users():
+#     us = A.getAllData(V.collUser)
+#     tb = F.minTab(V.usrTab,us)
+#     return A.table('Liste des utilisateurs',tb)
 
 @app.route(V.links[V.lkSpUsr]())
 @A.allArgs
@@ -110,7 +140,10 @@ def crt_user():
 
     for k in form.keys():
         form[k] = F.rmSpc(form[k])
+    form[V.nb_tent] = 0
+    form[V.bloque] = 0
     form[V.date] = dt
+    form[V.numero] = int(form[V.numero])
     form[V.role]= int(form[V.role])
     form[V.niveau] = V.superUsr if form[V.role]==V.superUsr else int(form[V.niveau])
     rs = A.create_user(form)
@@ -176,13 +209,12 @@ def login():
 
 @app.route('/dmds')
 @A.allArgs
-@A.deAuth
+@A.chkTk
 def dmds():
-    ct = A.Ctrt(V.email,'==',F.sEml())
+    # ct = A.Ctrt(V.email,'==',F.sEml())
     # ct.add(V.statut,'==',V.)
-    dmds = A.getAllData(V.collDmd,ct)
-    return render_template('dmds.html',V=V,F=F,ctt=F.minTab(V.usrDspl,dmds))
-
+    dmds = A.getUsrDmds() #A.getAllData(V.collDmd,ct)
+    return render_template('dmds.html',V=V,F=F,ctt=F.minTab(V.usrDspl+[V.statut],dmds))
 
 @app.route(V.links[V.lkListe], methods=['GET','POST'])
 # @A.lArgs
@@ -241,9 +273,9 @@ def listes():
 @A.allArgs
 def liste():
     liste = lambda ctt,nb : render_template('liste.html',V=V,F=F,nb=nb,titre='Listes de transport', ctt=ctt)
-    ctrt = A.Ctrt(V.publier,'==',V.oui)
-    lst = A.getAllData(V.collListe,ctrt)
-    ctt = ''
+    # ctrt = A.Ctrt(V.publier,'==',V.oui)
+    lst = A.getPubList() #A.getAllData(V.collListe,ctrt)
+    ctt = '<h1 class="px-5 font-bold text-lg">Il n\'y a pas de listes disponibles!!'
     l = len(lst)
     if l!=0:
         for ls in lst:
@@ -282,8 +314,8 @@ def voyage(chemin):
     lk1 = F.lk(lk,V.date,dte) if dte else ''
 
     # lk1 =  F.lk(V.links[V.lkChm](V.retour),V.moyen,desc[V.moyen])
-    ctrt = A.Ctrt(V.statut,'==',V.confirmer)
-    ctrt.add(V.moyen,'==',moyen)
+    ctrt = S.Constraint(V.statut,'=',V.confirmer) #A.Ctrt(V.statut,'==',V.confirmer)
+    ctrt.add('and',V.moyen,'=',moyen)
     voy = lambda dmds,req=None : render_template('depart.html',dt=dte,nb=len(dmds),V=V, F=F,titre=tt, lk=lk, tb=F.table(dmds,lk1,False,V.admDspl+[V.statut],req))
     if request.method=='GET':
         # if chemin==V.depart:
@@ -298,10 +330,10 @@ def voyage(chemin):
     if dte:
         # ct = A.Ctrt(V.jourDeVoyage,'==',F.fmtdt(dte))
         ctrt.min(0)
-        ctrt.add(V.statut,'==',V.valider)
-        ctrt.add(col,'==',dte)
-        ct = A.Ctrt(V.jourDeVoyage, '==' ,dte)
-        ct.add(V.moyen,'==',moyen)
+        ctrt.add('and',V.statut,'=',V.valider)#(V.statut,'==',V.valider)
+        ctrt.add('and',col,'=',dte)#(col,'==',dte)
+        ct = S.Constraint(V.jourDeVoyage, '=' ,dte) #A.Ctrt(V.jourDeVoyage, '==' ,dte)
+        ct.add('and', V.moyen,'=',moyen)#(V.moyen,'==',moyen)
         lll = A.getAllData(V.collDmd,ctrt)
         ll = A.getAllData(V.collListe,ct)
         lst = len(ll) == 0
@@ -438,13 +470,12 @@ def urgence():
         for i in V.dmdFields:
             if i not in dmd.keys():
                 dmd[i] = '--'
-        ct = A.Ctrt(V.jourDeVoyage, '==' ,dt)
-        ct.add(V.moyen,'==',my)
+        ct = S.Constraint(V.jourDeVoyage, '==' ,dt) #A.Ctrt(V.jourDeVoyage, '==' ,dt)
+        ct.add('and',V.moyen,'=',my)#(V.moyen,'==',my)
         ll = A.getAllData(V.collListe,ct)
         # isD = F.getChV()
         lst = len(ll) == 0
         dt = F.chgDate(dt)
-
 
         if lst:
 
@@ -518,7 +549,7 @@ def conn_dmd():
 
 @app.route('/crt/<tp>')
 @A.allArgs
-@A.chkTk
+# @A.chkTk
 def aff(tp):
     return render_template('aff.html',F=F,V=V,rs=tp=='succes')
 

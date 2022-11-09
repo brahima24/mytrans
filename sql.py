@@ -1,7 +1,10 @@
+from time import localtime
 import pyodbc
 import pandas as pd
 import os
 import functions as F
+import values as V
+import shutil
 
 class Values():
     
@@ -64,7 +67,7 @@ class Funcs():
     getT = lambda self, val: type(val).__name__
     isT = lambda self, vl,ls: self.getT(vl) in ls
     isStr = lambda self, vl: self.getT(vl) == 'str'
-    getV = lambda self, val: f'{val}' if self.isT(val,v.typeNumber) else  f"'{val}'" if self.isT(val,v.typeString) else None
+    getV = lambda self, val: f'{val}' if self.isT(val,v.typeNumber) else  f"""'{val.replace("'","''")}'""" if self.isT(val,v.typeString) else None
     jnPth = lambda self,p1,p2: p1+'/'+p2
     toDf = lambda self, sr: pd.DataFrame(sr.to_frame())
     cctDf = lambda self, c: pd.concat(c,axis=1).transpose() if len(c)!=0 else pd.DataFrame()
@@ -75,7 +78,7 @@ class Funcs():
     fmtVal = lambda self, vl: str(vl).replace("'",'')
     dfToDict = lambda self,dt: dt.iloc[0].to_dict() if len(dt)!=0 else {}
     # getIdsInDf = lambda self,df,ids: 
-    hdFile = lambda self,dt: '' if os.path.exists(v.static+'/'+self.fPth(dt)) else shutil.copyfile(v.filesDir+dt[v.relPath].replace('\\','')+'/'+dt[v.phPath], v.static+'/'+self.fPth(dt))
+    # hdFile = lambda self,dt: '' if os.path.exists(v.static+'/'+self.fPth(dt)) else shutil.copyfile(v.filesDir+dt[v.relPath].replace('\\','')+'/'+dt[v.phPath], v.static+'/'+self.fPth(dt))
     
     def rmSpc(self,vl):
         val = ''
@@ -106,7 +109,7 @@ class Funcs():
         
         return v
     
-    def makeWhere(self,ctrt: Constraint=None):
+    def makeWhere(self,ctrt=None):
         
         if not ctrt: return ''
         wh = ''
@@ -117,7 +120,7 @@ class Funcs():
             wh += f' {ctrt.fields[i]} {ctrt.comparators[i]} {v} '
         return f'where{wh}'
     
-    def makeQuery(self,tab:str,fields: list=None, ctrt: Constraint= None):
+    def makeQuery(self,tab:str,fields: list=[], ctrt=None):
         tb = ''
         jn = ''
         if fields:
@@ -173,26 +176,21 @@ f = Funcs()
 class SQL():
     
     def __init__(self):
-        pass
-        # self.conn = pyodbc.connect('Driver={SQL Server};'
-        #                                 'Server=BRA-SOGODOGO;'
-        #                                 'Database=mytrans;'
-        #                                 'Trusted_Connection=yes;'
-        #                             )
+        # pass
+        self.conn =  pyodbc.connect('Driver={SQL Server};'
+                                    'Server=BRA-SOGODOGO;'
+                                    'Database=mytrans;'
+                                    'Trusted_Connection=yes;')
         
-        # self.cursor = self.conn.cursor()
-    
+        self.cursor = self.conn.cursor()
     
     pdQry = lambda self,qry: pd.read_sql_query(qry,self.conn).fillna(v.na)
+    getSp = lambda self,v: f.getV(v) if f.getV(v) else 'NULL'
     
     def excQry(self, qry):
         # cursor = self.conn.cursor()
         self.cursor.execute(qry)
         self.conn.commit()
-        
-    def getConnData(self):
-        data = []
-        ct = Constraint()
         
     def crtTab(self):
         
@@ -210,29 +208,52 @@ class SQL():
             except:
                 return False
             return True
+        
         tabs = F.rdJSON('schema.json')
+        
         for i in tabs.keys():
             crTb(i,tabs[i])
 
+    def updt(self,clt,id,dt={}):
+        try:    
+            fl = ''
+            for k in dt.keys():
+                # v = f.getV(dt[k])
+                fl += f"{k}={self.getSp(dt[k])},"
+            fl = fl[:-1]
+            qry = f"""update {clt} set {fl} where id='{id}' """
+            self.excQry(qry)
+            return True
+        except:
+            return False
 
-    def getAllData(self,tab: str, fields: list=None ,ctrt: Constraint=None):
+    def getAllData(self,tab: str, fields: list=[] ,ctrt=None):
         qry = f.makeQuery(tab,fields,ctrt)
-        return self.pdQry(qry)
+        return self.pdQry(qry).to_dict('records')
     
+    def getConnData(self):
+        data = []
+        ctrt = Constraint(V.dept,'=',F.sDept())
+        ctrt.add('and',V.niveau,'>',int(F.sNvo()))
+        ctrt.add('and',V.statut,'=',V.attente)
+        data = self.getAllData(V.collDmd,ctrt=ctrt)
+        return data#.to_dict('records')
     
-    def chkId(self,idd,tb):
+    def chkId(self,idd,tb,c = 'id'):
         # print(idd)
-        c = 'id' #if tb==v.tbCorr else 'd.id'
-        ct = Constraint(c, '=', int(str(idd).replace(' ','')))
+         #if tb==v.tbCorr else 'd.id'
+        ct = Constraint(c, '=', str(idd).replace(' ',''))
         qry = f.makeQuery(tb,ctrt=ct)
         # print(qry)
         return f.dfToDict(self.pdQry(qry))
 
-    def insertIntoDB(self,tab,dt):
+    def insertIntoDB(self,tab,dt,cid='id'):
 
         try:
             # print('Miammmmmmm')
-            d = self.chkId(dt['id'],tab)
+            # print(dt.keys())
+            # c = V.email if isUsr else 'id'
+            d = self.chkId(dt[cid],tab,cid)
             # print(d)
             if not d:
                 flds = ''
@@ -240,7 +261,7 @@ class SQL():
 
                 for i in dt.keys():
                     flds += f"{i},"
-                    vls += f"'{dt[i]}',"
+                    vls += f"{self.getSp(dt[i])},"
                 qry = f"""
                     insert into {tab}({flds[:-1]}) values ({vls[:-1]})
                 """
@@ -249,8 +270,6 @@ class SQL():
                 # self.conn.commit()
             return True
         except Exception as e:
-            # print(str(e))
+            print(str(e),'insssss')
             return False
 
-
-    

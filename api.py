@@ -2,6 +2,7 @@ from flask import render_template,session,redirect,request
 # from matplotlib.style import use
 # from numpy import save
 # from requests import HTTPError
+import sql as S
 import requests
 import values as V
 import functions as F
@@ -17,16 +18,17 @@ current_dir = os.getcwd()
 
 files = os.path.join(current_dir,'static')
 getPrfl = lambda : files+'temp\\'+session.get(V.email)+'.jpg'
-
+sql = S.SQL()
 cred = credentials.Certificate(C.admConf)
 fadm = firebase_admin.initialize_app(cred)
 fbase = pyrebase.initialize_app(C.fbConf)
 db = firestore.client()
 
 coll = lambda nom: db.collection(nom)
-updt = lambda coll,id,field='',val='',dct={}: db.collection(coll).document(id).update({field:val} if not dct else dct)
+updt = lambda coll,id,field='',val='',dct={}: sql.updt(coll,id,{field:val} if not dct else dct) #db.collection(coll).document(id).update({field:val} if not dct else dct)
 form = lambda titre,key,msg="",req={},oob='': render_template('form.html', session=session, titre=titre,V=V, F=F,ctt=F.Form(key,msg,req,oob))
 home = lambda: render_template('home.html', F=F,V=V,titre='Accueil')
+table = lambda ttr,tb: render_template('table.html', F=F,V=V,titre=ttr,ctt=tb)
 panel = lambda id,r: redirect(f"{V.links[V.lkPnl]}/{id}/{F.getSt(r)}")
 isGet = lambda: request.method == 'GET'
 userColl = coll(V.collUser)
@@ -35,13 +37,19 @@ cAuth = fbase.auth()
 
 freeUser = lambda email: updt(V.collUser,email,dct={V.bloque:V.notBlocked})
 
-def getData(clt,id):
-    try:    
-        dt = coll(clt).document(id).get()
+def getPubList():
+    ct = S.Constraint(V.publier,'=',V.oui)
+    
+    return getAllData(V.collListe,ct)
 
-        if dt.exists:
-            return dt.to_dict()
-        return False
+def getData(clt,id,cid='id'):
+    try:    
+        # dt = coll(clt).document(id).get()
+
+        # if dt.exists:
+        ct= S.Constraint(cid,'=',id)
+        dt = sql.getAllData(clt,ctrt=ct)
+        return dt[0] if len(dt)==1 else False
     except:
         return False
 
@@ -72,7 +80,6 @@ def args(func):
         return func(*args, **kwargs)
         # Extend some capabilities of func
     return wrapper
-
 
 def rstArgs(func):
     @wraps(func)
@@ -186,14 +193,19 @@ def deAuth(f):
 
 def saveInColl(clt,doc,cid='id'):
     try:
-        coll(clt).document(doc[cid]).set(doc)
-        return True
-    except:
+        
+        # coll(clt).document(doc[cid]).set(doc)
+        return sql.insertIntoDB(clt,doc,cid)#True
+    except Exception as e:
+        print(str(e))
         return False
 
-def getAllData(coll,ctrt: Ctrt=None,k=None,v=None):
+def getAllData(coll,ctrt=None,k=None,v=None):
 
+    return sql.getAllData(coll,ctrt=ctrt)
+    
     if ctrt is None:
+        
         data = db.collection(coll).order_by('id').stream()
     else:
         qry = "db.collection(coll)"
@@ -220,14 +232,14 @@ def getAllData(coll,ctrt: Ctrt=None,k=None,v=None):
     return l
 
 def chkLst(my,dte):
-        ct = Ctrt(V.moyen,'==',my)
-        ct.add(V.jourDeVoyage,'==',dte)
+        ct = S.Constraint(V.moyen,'==',my) #Ctrt(V.moyen,'==',my)
+        ct.add('and',V.jourDeVoyage,'==',dte)
         ls = getAllData(V.collListe,ct)
         return len(ls)==0
 
 def getListe(id,pub=False):#chm,dt,my,pub=False):
 
-    lctrt = Ctrt(V.collListe,'==',id)
+    lctrt = S.Constraint(V.collListe,'==',id) #Ctrt(V.collListe,'==',id)
     # lctrt = Ctrt(F.getChV(chm),'==',dt)
     # lctrt.add(V.moyen,'==',my)
     # lctrt.add(V.statut,'==',V.valider)
@@ -238,12 +250,12 @@ def getListe(id,pub=False):#chm,dt,my,pub=False):
 
 def getVoyL(isDep,dt):
 
-    def chkDt(d,isAl=True):
+    # def chkDt(d,isAl=True):
 
-        lst = V.bus_aller if isAl else V.bus_retour
-        if d>=lst[-1]: return lst[0]
-        elif d<lst[1]: return lst[1]
-        else: return lst[2]
+    #     lst = V.bus_aller if isAl else V.bus_retour
+    #     if d>=lst[-1]: return lst[0]
+    #     elif d<lst[1]: return lst[1]
+    #     else: return lst[2]
 
     # id,dt = F.crtIdDt()
     # dt = pd.to_datetime(dt)
@@ -254,8 +266,8 @@ def getVoyL(isDep,dt):
     # dt = f'{jr}/{mois}/{an}'
     # print(dt)
     col = V.dateDepart if isDep else V.dateArrivee
-    ctrt = Ctrt(col,'==',dt)
-    ctrt.add(V.statut,'==',V.confirmer)
+    ctrt = S.Constraint(col,'==',dt)#Ctrt(col,'==',dt)
+    ctrt.add('and',V.statut,'==',V.confirmer)
 
     data = getAllData(V.collDmd,ctrt)
     data = data if len(data)==0 else F.sortDf(data,V.dateConf)
@@ -264,12 +276,21 @@ def getVoyL(isDep,dt):
 
 def getDep(jr=None,mois=None,an=None):
     dt = f'{jr}/{mois}/{an}'
-    ctrt = Ctrt(V.dateDepart,'==',dt)
-    ctrt.add(V.statut,'==',V.confirmer)
+    ctrt = S.Constraint(V.dateDepart,'==',dt) #Ctrt(V.dateDepart,'==',dt)
+    ctrt.add('and',V.statut,'==',V.confirmer)
 
     return
 
+def saveHist(hist,rslt):
+    hist[V.resultat] = rslt
+    # sql.insertIntoDB(V.collLog,hist)
+    saveInColl(V.collLog,hist)
+
 def getConnData(coll=None):
+    
+    data = sql.getConnData()
+    return data if len(data)==0 else F.sortDf(data,V.date)
+ 
     data = []
     # if F.isAdm():
     #     ctrt = Ctrt(V.statut,'==',V.valider)
@@ -284,12 +305,16 @@ def getConnData(coll=None):
 
     return data
 
+def getUsrDmds():
+    ct = S.Constraint(V.email,'=',F.sEml())
+    return getAllData(V.collDmd,ctrt=ct)
+
 def conn(email,pwd):
     # msg = 'Veuillez bien verifer votre email ou mot de passe'
     msg = 'Cet compte est bloqué, contactez le service informatique!'
     
     hist = F.crtHist(email,V.conn)
-    
+    sh = lambda r: saveHist(hist,r)
     
     try:
         
@@ -299,16 +324,15 @@ def conn(email,pwd):
         tk = usr['idToken']
         # rtk = usr['refreshToken']
         usrInf = cAuth.get_account_info(tk)
-        # print(usrInf)
+        print(usrInf)
         if not usrInf['users'][0]['emailVerified']:
             cAuth.send_password_reset_email(email)
             return f'Desolé cet email vous devez change votre mot de passe, un email vient de vous etre adreese a l\'email {email} !!'
-        user = getData(V.collUser,email)
+        user = getData(V.collUser,email,V.email)
         # print(user)
         if user:
             if user[V.bloque]==V.isBlocked:
-                hist[V.resultat] = V.accBlocked
-                saveInColl(V.collLog,hist)
+                sh(V.accBlocked)
                 return msg
             # user = user.to_dict()
             # print(F.sTk())
@@ -320,13 +344,10 @@ def conn(email,pwd):
             # session[V.tk] = tk
             # session[V.rTk] = rtk
             setTks(usr)
-            hist[V.resultat] = V.cntd
-            
-            saveInColl(V.collLog,hist)
+            sh(V.cntd)
             return True
         
-        hist[V.resultat] = V.emlNotFound
-        saveInColl(V.collLog,hist)
+        sh(V.emlNotFound)
         msg = 'Cet utilisateur n\'existe pas'
         session.clear()
         return msg
@@ -361,10 +382,6 @@ def conn(email,pwd):
         session.clear()
         return msg
 
-def saveHist(hist,rslt):
-    hist[V.resultat] = rslt
-    saveInColl(V.collLog,hist)
-
 def resetPwd(pwd,oobCode):
     hist = F.crtHist('req@req.req',V.rstRai)
     try:
@@ -387,33 +404,38 @@ def resetPwd(pwd,oobCode):
 
 def create_user(user):
     hist = F.crtHist(raison='CREATE_USER')
+    sh = lambda l:saveHist(hist,l)
     l = ''
     
     try:
         
+        p = lambda v: print(v*8)
         eml = user[V.email]
-        usr = cAuth.create_user_with_email_and_password(eml,'miam===?milouu.%+!!!22')
+        usr = cAuth.create_user_with_email_and_password(eml,'@$miam===?milouu.%+!!!22')
+        # print(usr)
+        p('fcrrrrrr')
         
         cAuth.send_password_reset_email(eml)
         rs = saveInColl(V.collUser,user,V.email)
-        
+        p('ssqqll')
         if rs:
             l = V.success
         else:
+            # p('mmmmmmmm')
             l = V.failure
             cAuth.delete_user_account(usr['idToken'])
-        saveHist(hist,l)
+        p('ookkkk')
+        sh(l)
         return rs
-        
-            
-    
     except Exception as e:
+        p('nooooo')
+        print(str(e))
         if type(e).__name__=='EmailAlreadyExistsError':
             l = V.emlExist
         else:
             l = V.failure
         # print(e)
-        saveHist(hist,l)
+        sh(l)
         return None
 
 def checkPwd(pwd):

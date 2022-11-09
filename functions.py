@@ -47,6 +47,21 @@ getCls = lambda cl: cl[7:-1]
 getChV = lambda chm : V.dateDepart if chm==V.data[V.chemin][V.depart] else V.dateArrivee
 getSt = lambda r: 'ok' if r else 'no'
 
+def chMnu():
+    # spUsrMnu
+    # siteMenu
+    li = ''
+    ls =  V.spUsrMnu if isSprUsr() else V.siteMenu
+    for k in ls.keys():
+        li += f"""
+          <li>
+            <a
+            class="inline-block text-white font-black no-underline hover:text-gray-300 hover:text-underline px-2"
+            href="{ls[k]}"
+            > {k} </a>
+        </li>"""
+    return li
+
 def rdJSON(nm):
     fn = V.filesDir+nm
     try:
@@ -376,6 +391,13 @@ def table(dmds,lnk,val,ttr=None,isL=None,tr=None):
     """
     return ctt + "</form></div>"
 
+def dbTbLst(tb,dt):
+    tbc = V.tableList[tb]
+    c = 'Modifer'
+    flds = tbc[1]+[c]
+    dt[c] = f"<a href='{V.links[V.lkTbLst](tb,True)}'><i class='fa fa-edit'></i></a>"
+    return minTab(flds,dt)
+
 def crtIdDt():
 
     t = localtime()
@@ -398,6 +420,17 @@ def chgDate(dt):
     try: dt = pd.to_datetime(dt,format='%d/%m/%Y')
     except: dt=False
     return dt
+
+# def chkVoyAbs(dt):
+#     '''Absent'''
+#     try:
+#         id,td = crtIdDt()
+#         td = chgDate(td.split(' ')[0])
+#         dt = chgDate(dt)
+#         if td and dt:
+#             return (td-dt).days<=0
+#         return None
+#     except: return None
 
 def rmSpc(vl):
     val = ''

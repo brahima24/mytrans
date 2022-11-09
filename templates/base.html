@@ -117,16 +117,9 @@
             id="nav-content"
           >
           <ul class="list-reset lg:flex justify-end flex-1 items-center">
-          {% for k in V.siteMenu.keys() %}
-          <li>
-            <a
-            class="inline-block text-white font-black no-underline hover:text-gray-300 hover:text-underline px-2"
-            href="{{V.siteMenu[k]}}"
-            > {{k}} </a>
-        </li>
+            
+            {{F.chMnu() | safe}}
 
-
-          {% endfor %}
           {% if F.isAdm() %}<li class="mr-2">
             <li class="m-2">
             

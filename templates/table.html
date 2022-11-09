@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% set titre = titre %}
+{% set V = V %}
+{% set F = F %}
+{% block content %}
+
+
+<div class='w-5/6 h-screen px-2' >
+    
+        <form
+            action="{lnk}" method="post" enctype="multipart/form-data"
+            class="m-1 md:m-3 col-span-full w-full xl:col-span-8 bg-gray-100 shadow-lg rounded-lg border border-gray-200">
+
+            <header class="px-5 sticky py-4 border-b border-slate-100">
+                <div class="flex flex-wrap">
+                    <div class="w-1/2 flex justify-start">
+                        <h2 class="font-semibold text-slate-800">{tt}</h2>
+                    </div>
+                        {bt}
+                </div>
+            </header>
+{{ ctt | safe }}
+            
+      </form>
+    
+    </div>
+
+</div>
+
+
+{% endblock %}
